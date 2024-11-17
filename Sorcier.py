@@ -16,3 +16,9 @@ class Sorcier(Unit):
         self.skills = [{"Skill name": "Boule de feu", "Power": 25, "Range": 5, "Effect": "Burn"},
                        {"Skill name": "Gèle", "Power": 0, "Range": 0, "Effect": "Freeze"}
                        ]
+    def use_skill(self, target, skill):
+        if skill in self.skills:
+            if abs(self.x - target.x) <= skill["Range"] and abs(self.y - target.y) <= skill["Range"]:
+                target.health -= (self.attack_power + skill["Power"])
+            if skill["Effect"] != None:
+                target.effect_status = skill["Effect"]

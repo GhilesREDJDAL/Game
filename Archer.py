@@ -15,3 +15,9 @@ class Archer(Unit):
         self.skills = [{"Skill name": "Tir à l'arc", "Power": 15, "Range": 10, "Effect": None},
                        {"Skill name": "Flèche empoisonnée", "Power": 10, "Range": 10, "Effect": "Poison"}
                        ]
+    def use_skill(self, target, skill):
+        if skill in self.skills:
+            if abs(self.x - target.x) <= skill["Range"] and abs(self.y - target.y) <= skill["Range"]:
+                target.health -= (self.attack_power + skill["Power"])
+            if skill["Effect"] != None:
+                target.effect_status = skill["Effect"]

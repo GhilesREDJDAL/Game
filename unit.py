@@ -44,7 +44,7 @@ class Unit:
         Dessine l'unité sur la grille.
     """
 
-    def __init__(self, x, y, health, attack_power, team):
+    def __init__(self, x, y, health, attack_power, defense_power, speed, team):
         """
         Construit une unité avec une position, une santé, une puissance d'attaque et une équipe.
 
@@ -65,8 +65,12 @@ class Unit:
         self.y = y
         self.health = health
         self.attack_power = attack_power
+        self.defense_power = defense_power
+        self.speed = speed
+        self.critical_rate = 1
         self.team = team  # 'player' ou 'enemy'
         self.is_selected = False
+        self.effect_status = None
 
     def move(self, dx, dy):
         """Déplace l'unité de dx, dy."""
@@ -87,3 +91,10 @@ class Unit:
                              self.y * CELL_SIZE, CELL_SIZE, CELL_SIZE))
         pygame.draw.circle(screen, color, (self.x * CELL_SIZE + CELL_SIZE //
                            2, self.y * CELL_SIZE + CELL_SIZE // 2), CELL_SIZE // 3)
+
+    @classmethod
+    def use_skill(self, target, skill):
+        pass
+    
+    def take_damage(self, damage):
+        self.health -= damage
