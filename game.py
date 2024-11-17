@@ -6,7 +6,7 @@ GRID_SIZE = 8  # Taille de la grille (8x8)
 CELL_SIZE = 60  # Taille de chaque cellule (en pixels)
 WIDTH = GRID_SIZE * CELL_SIZE  # Largeur de la fenêtre
 HEIGHT = GRID_SIZE * CELL_SIZE  # Hauteur de la fenêtre
-FPS = 30  # Images par seconde ghiles
+FPS = 30  # Images par seconde 
 
 # Couleurs
 WHITE = (255, 255, 255)
