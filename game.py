@@ -114,7 +114,15 @@ class Game:
         # Rafraîchit l'écran
         pygame.display.flip()
 
+"""
+# Example game loop for managing cases
+cases = [CaseSoin(1, 1, 3), CaseFeu(2, 2, 5)]
 
+for case in cases[:]:
+    if case.efffect_countdown():
+        cases.remove(case)
+
+"""
 def main():
 
     # Initialisation de Pygame
