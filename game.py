@@ -29,11 +29,11 @@ class Game:
             La surface de la fenêtre du jeu.
         """
         self.screen = screen
-        self.player_units = [Unit(0, 0, 10, 2, 'player'),
-                             Unit(1, 0, 10, 2, 'player')]
+        self.player_units = [Archer(0, 0, 'player'),
+                             Archer(1, 0, 'player')]
 
-        self.enemy_units = [Unit(6, 6, 8, 1, 'enemy'),
-                            Unit(7, 6, 8, 1, 'enemy')]
+        self.enemy_units = [Sorcier(6, 6, 'enemy'),
+                            Sorcier(7, 6, 'enemy')]
 
     def handle_player_turn(self):
         """Tour du joueur"""
