@@ -1,12 +1,15 @@
 from abc import ABC, abstractmethod
 from unit import *
+from Effects import Effect
 
 class Case(ABC):
     def __init__(self, x, y):
         self.__x = x
         self.__y = y
         self.__occupancy = None
-        self.__effectTTL = None
+        self.__effect = None
+        self.__isaffected = False
+        
     @abstractmethod
     def is_traversable(self):
         pass
@@ -43,56 +46,32 @@ class Case(ABC):
         else: 
             raise TypeError("Value has to be Unit object")
     @property
-    def effectTTL(self):
-        return self.__effectTTL
+    def effect(self):
+        return self.__effect
 
-    @effectTTL.setter
-    def effectTTL(self, value):
-        self.__effectTTL = value
+    @effect.setter
+    def effect(self, value):
+        if isinstance(value, Effect):
+            self.__effect = value
+            self.__isaffected = True
+        else:
+            raise TypeError("Value has to be Effect object.")
+            
+    def apply_effect(self, unit):
+        if self.__isaffected:
+            self.effect.apply_effect(self.occupancy)
+        else:
+            pass
         
-    def efffect_countdown(self):
-        if self.__effectTTL is not None:
-            self.__effectTTL -= 1
-            if self.__effectTTL <= 0:
-                return True  
-        return False
-    
+class Normal(Case):
+    def is_traversable(self):
+        return True
+            
 class Mur(Case):
     def is_traversable(self):
         return False
 
-    def apply_effect(self, unit):
-        pass  
-
 
 class Eau(Case):
     def is_traversable(self):
-        """Only traversable for flying units"""
         return True
-
-    def apply_effect(self, unit):
-        pass  
-
-class Soin(Case):
-    def __init__(self, x, y, effect_duration):
-        super().__init__(x, y)
-        self.__effectTTL = effect_duration
-
-    def is_traversable(self):
-        return True
-
-    def apply_effect(self, unit):
-        if self.__effectTTL > 0:
-            unit.health += 10  # Healing effect
-
-class Feu(Case):
-    def __init__(self, x, y, effect_duration):
-        super().__init__(x, y)
-        self.__effectTTL = effect_duration
-
-    def is_traversable(self):
-        return True
-
-    def apply_effect(self, unit):
-        if self.__effectTTL > 0:
-            unit.health -= 15  # Fire damage
