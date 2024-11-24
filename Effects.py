@@ -58,9 +58,14 @@ class Effect(ABC):
 class Soin(Effect):
     def apply_effect(self, unit):
         if self.__effectTTL > 0:
-            unit.health += 10  # Healing effect
+            unit.health += 10  
 
 class Feu(Effect):
     def apply_effect(self, unit):
         if self.__effectTTL > 0:
-            unit.health -= 15  # Fire damage
+            unit.health -= 15  
+            
+class Poison(Effect):
+    def apply_effect(self, unit):
+        if self.__effectTTL > 0:
+            unit.health -= 25

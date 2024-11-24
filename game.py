@@ -38,24 +38,24 @@ class Game:
     def handle_player_turn(self):
         """Tour du joueur"""
         for selected_unit in self.player_units:
-
+    
             # Tant que l'unité n'a pas terminé son tour
             has_acted = False
             selected_unit.is_selected = True
             self.flip_display()
             while not has_acted:
-
+    
                 # Important: cette boucle permet de gérer les événements Pygame
                 for event in pygame.event.get():
-
+    
                     # Gestion de la fermeture de la fenêtre
                     if event.type == pygame.QUIT:
                         pygame.quit()
                         exit()
-
+    
                     # Gestion des touches du clavier
                     if event.type == pygame.KEYDOWN:
-
+    
                         # Déplacement (touches fléchées)
                         dx, dy = 0, 0
                         if event.key == pygame.K_LEFT:
@@ -66,10 +66,10 @@ class Game:
                             dy = -1
                         elif event.key == pygame.K_DOWN:
                             dy = 1
-
+    
                         selected_unit.move(dx, dy)
                         self.flip_display()
-
+    
                         # Attaque (touche espace) met fin au tour
                         if event.key == pygame.K_SPACE:
                             for enemy in self.enemy_units:
@@ -77,9 +77,29 @@ class Game:
                                     selected_unit.attack(enemy)
                                     if enemy.health <= 0:
                                         self.enemy_units.remove(enemy)
-
+    
                             has_acted = True
                             selected_unit.is_selected = False
+                        
+                        # Utilisation de compétence
+                        elif event.key == pygame.K_s:
+                            print("Compétences disponibles :")
+                            for i, skill in enumerate(selected_unit.skills):
+                                print(f"{i + 1}. {skill.nom}")
+    
+                            skill_index = int(input("Choisissez une compétence : ")) - 1
+                            if 0 <= skill_index < len(selected_unit.skills):
+                                chosen_skill = selected_unit.skills[skill_index]
+                                for enemy in self.enemy_units:
+                                    if abs(selected_unit.x - enemy.x) <= chosen_skill.portee and abs(selected_unit.y - enemy.y) <= chosen_skill.portee:
+                                        selected_unit.use_skill(enemy, chosen_skill)
+                                        if enemy.health <= 0:
+                                            self.enemy_units.remove(enemy)
+                                        break
+    
+                                has_acted = True
+                                selected_unit.is_selected = False
+
 
     def handle_enemy_turn(self):
         """IA très simple pour les ennemis."""
@@ -114,15 +134,7 @@ class Game:
         # Rafraîchit l'écran
         pygame.display.flip()
 
-"""
-# Example game loop for managing cases
-cases = [CaseSoin(1, 1, 3), CaseFeu(2, 2, 5)]
 
-for case in cases[:]:
-    if case.efffect_countdown():
-        cases.remove(case)
-
-"""
 def main():
 
     # Initialisation de Pygame

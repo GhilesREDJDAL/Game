@@ -1,6 +1,8 @@
 import pygame
 import random
 from abc import ABC, abstractmethod
+from Competences import *
+
 # Constantes
 GRID_SIZE = 8
 CELL_SIZE = 60
@@ -135,38 +137,27 @@ class Archer(Unit):
     def __init__(self, x, y, team):
         super().__init__(x, y, 100, 100, 50, 125, team)
         self.type = "Ranged"
-        self.skills = [{"Skill name": "Tir à l'arc", "Power": 15, "Range": 10, "Effect": None},
-                       {"Skill name": "Flèche empoisonnée", "Power": 10, "Range": 10, "Effect": "Poison"}
-                       ]
+        self.skills = [TirArc(), FlecheEmpoisonnee()]
+
     def use_skill(self, target, skill):
-        if skill in self.skills:
-            if abs(self.x - target.x) <= skill["Range"] and abs(self.y - target.y) <= skill["Range"]:
-                target.health -= (self.attack_power + skill["Power"])
-            if skill["Effect"] != None:
-                target.effect_status = skill["Effect"]
+        skill.use(self, target)
+
 class Sorcier(Unit):
     def __init__(self, x, y, team):
         super().__init__(x, y, 75, 100, 75, 75, team)
         self.type = "Ranged"
-        self.skills = [{"Skill name": "Boule de feu", "Power": 25, "Range": 5, "Effect": "Burn"},
-                       {"Skill name": "Gèle", "Power": 0, "Range": 0, "Effect": "Freeze"}
-                       ]
+        self.skills = [BouleDeFeu(), Gele()]
+
     def use_skill(self, target, skill):
-        if skill in self.skills:
-            if abs(self.x - target.x) <= skill["Range"] and abs(self.y - target.y) <= skill["Range"]:
-                target.health -= (self.attack_power + skill["Power"])
-            if skill["Effect"] != None:
-                target.effect_status = skill["Effect"]
+        skill.use(self, target)
+
 class Guerrier(Unit):
     def __init__(self, x, y, team):
         super().__init__(x, y, 150, 100, 100, 20, team)
         self.type = "Physical"
-        self.skills = [{"Skill name": "Coup d'épée", "Power": 25, "Range": 1, "Effect": None},
-                       {"Skill name": "Coup de bouclier", "Power": 10, "Range": 1, "Effect": "Pushback"}
-                       ]
+        self.skills = [CoupDEpee(), CoupDeBouclier()]
+
     def use_skill(self, target, skill):
-        if skill in self.skills:
-            if abs(self.x - target.x) <= skill["Range"] and abs(self.y - target.y) <= skill["Range"]:
-                target.health -= (self.attack_power + skill["Power"])
-            if skill["Effect"] != None:
-                target.effect_status = skill["Effect"]
+        skill.use(self, target)
+
+
