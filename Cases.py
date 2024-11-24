@@ -1,6 +1,5 @@
 from abc import ABC, abstractmethod
 from unit import *
-from Effects import Effect
 
 class Case(ABC):
     def __init__(self, x, y):

@@ -15,8 +15,7 @@ RED = (255, 0, 0)
 BLUE = (0, 0, 255)
 GREEN = (0, 255, 0)
 
-
-class Unit():
+class Unit(ABC):
     """
     Classe pour représenter une unité.
 
@@ -83,7 +82,7 @@ class Unit():
     def attack(self, target):
         """Attaque une unité cible."""
         if abs(self.x - target.x) <= 1 and abs(self.y - target.y) <= 1:
-            target.health -= self.attack_power
+            target.health = max(0, target.health - self.attack_power)
 
     def draw(self, screen):
         """Affiche l'unité sur l'écran."""
@@ -93,12 +92,13 @@ class Unit():
                              self.y * CELL_SIZE, CELL_SIZE, CELL_SIZE))
         pygame.draw.circle(screen, color, (self.x * CELL_SIZE + CELL_SIZE //
                            2, self.y * CELL_SIZE + CELL_SIZE // 2), CELL_SIZE // 3)
+
     @abstractmethod
     def use_skill(self, target, skill):
         pass
     
     def take_damage(self, damage):
-        self.health -= damage
+        self.health = max(0, self.health - damage)
 
     @property
     def x(self):
@@ -120,7 +120,7 @@ class Unit():
         if valeur >= 0 and isinstance(valeur, int):
             self.__health = valeur
         else:
-            raise TypeError(f"La valeur doit être un entier compris entre 0 et {GRID_SIZE} ")
+            raise TypeError("La valeur de la santé doit être un entier positif.")
 
     @property
     def y(self):
@@ -131,8 +131,8 @@ class Unit():
         if valeur >= 0 and isinstance(valeur, int):
             self.__y = valeur
         else:
-            raise TypeError(f"La valeur doit être un entier compris entre 0 et {GRID_SIZE} ")    
-   
+            raise TypeError(f"La valeur doit être un entier compris entre 0 et {GRID_SIZE} ")
+
 class Archer(Unit):
     def __init__(self, x, y, team):
         super().__init__(x, y, 100, 100, 50, 125, team)
@@ -146,7 +146,7 @@ class Sorcier(Unit):
     def __init__(self, x, y, team):
         super().__init__(x, y, 75, 100, 75, 75, team)
         self.type = "Ranged"
-        self.skills = [BouleDeFeu(), Gele()]
+        self.skills = [BouleDeFeu()] # Gele() à ajouter plus tard
 
     def use_skill(self, target, skill):
         skill.use(self, target)
@@ -159,5 +159,3 @@ class Guerrier(Unit):
 
     def use_skill(self, target, skill):
         skill.use(self, target)
-
-

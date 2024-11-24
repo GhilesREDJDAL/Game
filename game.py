@@ -3,7 +3,6 @@ import random
 
 from unit import *
 
-
 class Game:
     """
     Classe pour représenter le jeu.
@@ -90,12 +89,24 @@ class Game:
                             skill_index = int(input("Choisissez une compétence : ")) - 1
                             if 0 <= skill_index < len(selected_unit.skills):
                                 chosen_skill = selected_unit.skills[skill_index]
-                                for enemy in self.enemy_units:
-                                    if abs(selected_unit.x - enemy.x) <= chosen_skill.portee and abs(selected_unit.y - enemy.y) <= chosen_skill.portee:
-                                        selected_unit.use_skill(enemy, chosen_skill)
-                                        if enemy.health <= 0:
-                                            self.enemy_units.remove(enemy)
-                                        break
+                                print("Cliquez sur un ennemi pour choisir une cible.")
+    
+                                cible_choisie = False
+                                while not cible_choisie:
+                                    for event in pygame.event.get():
+                                        if event.type == pygame.QUIT:
+                                            pygame.quit()
+                                            exit()
+                                        if event.type == pygame.MOUSEBUTTONDOWN:
+                                            mx, my = pygame.mouse.get_pos()
+                                            grid_x, grid_y = mx // CELL_SIZE, my // CELL_SIZE
+                                            for enemy in self.enemy_units:
+                                                if enemy.x == grid_x and enemy.y == grid_y:
+                                                    selected_unit.use_skill(enemy, chosen_skill)
+                                                    if enemy.health <= 0:
+                                                        self.enemy_units.remove(enemy)
+                                                    cible_choisie = True
+                                                    break
     
                                 has_acted = True
                                 selected_unit.is_selected = False

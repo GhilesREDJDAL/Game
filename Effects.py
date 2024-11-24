@@ -1,16 +1,7 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-"""
-Created on Fri Nov 22 23:57:59 2024
-
-@author: seb
-"""
 from abc import ABC, abstractmethod
-from unit import Unit
-from Cases import Case
 
 class Effect(ABC):
-    def __init__(self, x, y, target, effect_duration):
+    def __init__(self, x=None, y=None, target=None, effect_duration=None):
         self.__x = x
         self.__y = y
         self.__effectTTL = effect_duration
@@ -54,7 +45,7 @@ class Effect(ABC):
             self.__target = value
         else:
             raise TypeError("Target has to be a unit or a case.")
-        
+
 class Soin(Effect):
     def apply_effect(self, unit):
         if self.__effectTTL > 0:
@@ -64,7 +55,7 @@ class Feu(Effect):
     def apply_effect(self, unit):
         if self.__effectTTL > 0:
             unit.health -= 15  
-            
+
 class Poison(Effect):
     def apply_effect(self, unit):
         if self.__effectTTL > 0:
