@@ -1,6 +1,7 @@
+# main.py
 import pygame
-from game import Game
 from constants import WIDTH, HEIGHT, FPS
+from game import Game
 
 def main():
     pygame.init()
