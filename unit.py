@@ -1,5 +1,6 @@
+# unit.py
 import pygame
-from constants import CELL_SIZE, RED, GREEN, BLUE, GRID_SIZE
+from constants import CELL_SIZE, RED, BLUE, GREEN
 
 class Unit:
     def __init__(self, x, y, health, attack_power, team):
@@ -18,42 +19,26 @@ class Unit:
         new_x = self.x + dx
         new_y = self.y + dy
 
-        if not (0 <= new_x < GRID_SIZE and 0 <= new_y < GRID_SIZE):
-            return False
+        if (0 <= new_x < 8 and 0 <= new_y < 8 and (new_x, new_y) not in obstacles):
+            self.x = new_x
+            self.y = new_y
 
-        if (new_x, new_y) in obstacles:
-            print(f"Déplacement impossible : obstacle à ({new_x}, {new_y})")
-            return False
-
-        for unit in units:
-            if unit.is_alive and (unit.x, unit.y) == (new_x, new_y):
-                print(f"Déplacement impossible : position occupée par une autre unité à ({new_x}, {new_y})")
-                return False
-
-        self.x = new_x
-        self.y = new_y
-
-        if (self.x, self.y) in water_zones:
-            print(f"L'unité de l'équipe {self.team} est tombée dans l'eau à ({self.x}, {self.y}) et est morte !")
-            self.health = 0
-            self.is_alive = False
-            return True
+            if (self.x, self.y) in water_zones:
+                print(f"L'unité de l'équipe {self.team} est tombée dans l'eau à ({self.x}, {self.y}) et est morte !")
+                self.health = 0
+                self.is_alive = False
+                return True
 
         return False
 
-    def attack(self, target, obstacles):
+    def attack(self, target):
         if not self.is_alive:
             return
 
         if abs(self.x - target.x) <= 1 and abs(self.y - target.y) <= 1:
-            if (self.x, target.y) in obstacles or (target.x, self.y) in obstacles:
-                print(f"Attaque impossible : un obstacle bloque l'attaque entre ({self.x}, {self.y}) et ({target.x}, {target.y}).")
-                return
-
             target.health -= self.attack_power
             if target.health <= 0:
                 target.is_alive = False
-                print(f"L'unité de l'équipe {target.team} à ({target.x}, {target.y}) a été tuée !")
 
     def draw(self, screen):
         if not self.is_alive:
