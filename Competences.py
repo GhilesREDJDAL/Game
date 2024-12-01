@@ -2,10 +2,11 @@ from abc import ABC, abstractmethod
 from Effects import *
 
 class Competence(ABC):
-    def __init__(self, nom, puissance, portee, effet=None):
+    def __init__(self, nom, puissance, portee, aoe_radius, effet=None):
         self.nom = nom
         self.puissance = puissance
         self.portee = portee
+        self.aoe_radius = aoe_radius  # Area of effect radius
         self.effet = effet
 
     @abstractmethod
@@ -14,7 +15,7 @@ class Competence(ABC):
 
 class TirArc(Competence):
     def __init__(self):
-        super().__init__("Tir à l'arc", 15, 10)
+        super().__init__("Tir à l'arc", 15, 10, 1)
 
     def use(self, utilisateur, cible):
         if abs(utilisateur.x - cible.x) <= self.portee and abs(utilisateur.y - cible.y) <= self.portee:
@@ -22,7 +23,7 @@ class TirArc(Competence):
 
 class FlecheEmpoisonnee(Competence):
     def __init__(self):
-        super().__init__("Flèche empoisonnée", 10, 10, Poison())
+        super().__init__("Flèche empoisonnée", 10, 10, 1, Poison())
 
     def use(self, utilisateur, cible):
         if abs(utilisateur.x - cible.x) <= self.portee and abs(utilisateur.y - cible.y) <= self.portee:
@@ -31,7 +32,7 @@ class FlecheEmpoisonnee(Competence):
 
 class BouleDeFeu(Competence):
     def __init__(self):
-        super().__init__("Boule de feu", 25, 5, Feu())
+        super().__init__("Boule de feu", 25, 5, 3, Feu())  # Corrected to pass 3 as positional argument
 
     def use(self, utilisateur, cible):
         if abs(utilisateur.x - cible.x) <= self.portee and abs(utilisateur.y - cible.y) <= self.portee:
@@ -49,7 +50,7 @@ class BouleDeFeu(Competence):
 
 class CoupDEpee(Competence):
     def __init__(self):
-        super().__init__("Coup d'épée", 25, 1)
+        super().__init__("Coup d'épée", 25, 1, 1)
 
     def use(self, utilisateur, cible):
         if abs(utilisateur.x - cible.x) <= self.portee and abs(utilisateur.y - cible.y) <= self.portee:
@@ -57,7 +58,7 @@ class CoupDEpee(Competence):
 
 class CoupDeBouclier(Competence):
     def __init__(self):
-        super().__init__("Coup de bouclier", 10, 1)
+        super().__init__("Coup de bouclier", 10, 1, 1)
 
     def use(self, utilisateur, cible):
         if abs(utilisateur.x - cible.x) <= self.portee and abs(utilisateur.y - cible.y) <= self.portee:

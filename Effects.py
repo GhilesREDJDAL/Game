@@ -1,7 +1,8 @@
 from abc import ABC, abstractmethod
 
 class Effect(ABC):
-    def __init__(self, x=None, y=None, target=None, effect_duration=None):
+    def __init__(self, name, x=None, y=None, target=None, effect_duration=None):
+        self.name = name
         self.__x = x
         self.__y = y
         self.__effectTTL = effect_duration
@@ -47,16 +48,25 @@ class Effect(ABC):
             raise TypeError("Target has to be a unit or a case.")
 
 class Soin(Effect):
+    def __init__(self): 
+        super().__init__("Soin", effect_duration=3)
+        
     def apply_effect(self, unit):
-        if self.__effectTTL > 0:
+        if self.effectTTL > 0:
             unit.health += 10  
 
 class Feu(Effect):
+    def __init__(self): 
+        super().__init__("Feu", effect_duration=3)
+        
     def apply_effect(self, unit):
-        if self.__effectTTL > 0:
-            unit.health -= 15  
+        if self.effectTTL > 0:
+            unit.health = max(0, unit.health - 15)  
 
 class Poison(Effect):
+    def __init__(self): 
+        super().__init__("Poison", effect_duration=3)
+        
     def apply_effect(self, unit):
-        if self.__effectTTL > 0:
-            unit.health -= 25
+        if self.effectTTL > 0:
+            unit.health = max(0, unit.health - 25)

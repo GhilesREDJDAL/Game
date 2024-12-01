@@ -31,7 +31,7 @@ class Game:
             La surface de la fenêtre du jeu.
         """
         self.screen = screen
-        self.player_units = [Archer(0, 0, 'player'),
+        self.player_units = [Sorcier(0, 0, 'player'),
                              Archer(1, 0, 'player')]
 
         self.enemy_units = [Sorcier(6, 6, 'enemy'),
@@ -40,6 +40,7 @@ class Game:
         self.mode_de_jeu = None
         self.obstacles = {(3, 3), (4, 4), (5, 5)}
         self.water_zones = {(2, 2), (6, 2)}
+        self.current_effects = []
         
     def draw_text(self, text, position, size=30, color=(255, 255, 255)):
         font = pygame.font.Font(None, size)
@@ -71,25 +72,15 @@ class Game:
     def handle_player_turn(self):
         """Tour du joueur"""
         for selected_unit in self.player_units:
-    
-            # Tant que l'unité n'a pas terminé son tour
             has_acted = False
             selected_unit.is_selected = True
             self.flip_display()
             while not has_acted:
-    
-                # Important: cette boucle permet de gérer les événements Pygame
                 for event in pygame.event.get():
-    
-                    # Gestion de la fermeture de la fenêtre
                     if event.type == pygame.QUIT:
                         pygame.quit()
                         exit()
-    
-                    # Gestion des touches du clavier
                     if event.type == pygame.KEYDOWN:
-    
-                        # Déplacement (touches fléchées)
                         dx, dy = 0, 0
                         if event.key == pygame.K_LEFT:
                             dx = -1
@@ -107,20 +98,17 @@ class Game:
                             selected_unit.is_selected = False
                         self.flip_display()
     
-                        # Attaque (touche espace) met fin au tour
                         if event.key == pygame.K_SPACE:
                             for enemy in self.enemy_units:
                                 if abs(selected_unit.x - enemy.x) <= 1 and abs(selected_unit.y - enemy.y) <= 1:
                                     selected_unit.attack(enemy)
                                     if enemy.health <= 0:
                                         self.enemy_units.remove(enemy)
-    
                             has_acted = True
                             selected_unit.is_selected = False
-
-                        # Utilisation de compétence
+    
                         elif event.key == pygame.K_s:
-                            self.flip_display()  # Afficher la grille et les unités
+                            self.flip_display()
                             self.draw_text("Compétences disponibles :", (10, HEIGHT + 10))
                             for i, skill in enumerate(selected_unit.skills):
                                 self.draw_text(f"{i + 1}. {skill.nom}", (10, HEIGHT + 50 + i * 30))
@@ -139,7 +127,7 @@ class Game:
                                                 chosen_skill = selected_unit.skills[skill_index]
                                                 skill_selected = True
     
-                                                self.flip_display()  # Afficher la grille et les unités
+                                                self.flip_display()
                                                 self.draw_text("Cliquez sur un ennemi pour choisir une cible.", (10, HEIGHT + 10))
                                                 pygame.display.flip()
     
@@ -157,13 +145,14 @@ class Game:
                                                                     selected_unit.use_skill(enemy, chosen_skill)
                                                                     if enemy.health <= 0:
                                                                         self.enemy_units.remove(enemy)
+                                                                    if chosen_skill.effet is not None:
+                                                                        print(f"Applying {chosen_skill.effet.name} effect to enemy at ({enemy.x}, {enemy.y})")
+                                                                        self.apply_effect(enemy, chosen_skill)
                                                                     cible_choisie = True
                                                                     break
-    
                                                 has_acted = True
                                                 selected_unit.is_selected = False
-                        
-                        # Information sur une unité
+    
                         elif event.key == pygame.K_i:
                             self.flip_display()
                             self.draw_text("Cliquez sur une cible pour obtenir des informations", (10, HEIGHT + 10))
@@ -222,34 +211,96 @@ class Game:
 
     def flip_display(self):
         """Affiche le jeu."""
-
         # Affiche la grille
         self.screen.fill(BLACK)
         for x in range(0, WIDTH, CELL_SIZE):
             for y in range(0, HEIGHT, CELL_SIZE):
                 rect = pygame.Rect(x, y, CELL_SIZE, CELL_SIZE)
                 pygame.draw.rect(self.screen, WHITE, rect, 1)
-
+    
         # Affiche les unités
         for unit in self.player_units + self.enemy_units:
             unit.draw(self.screen)
-
-
+    
+        # Affiche les zones d'eau
         for x, y in self.water_zones:
             pygame.draw.rect(self.screen, WATER_BLUE, (x * CELL_SIZE, y * CELL_SIZE, CELL_SIZE, CELL_SIZE))
-
+    
+        # Affiche les obstacles
         for x, y in self.obstacles:
             pygame.draw.rect(self.screen, GRAY, (x * CELL_SIZE, y * CELL_SIZE, CELL_SIZE, CELL_SIZE))
-            
+    
+        # Draw the effects on the screen
+        self.draw_effects(self.screen)
+    
         # Affiche les messages en bas
         pygame.draw.rect(self.screen, BLACK, pygame.Rect(0, HEIGHT, WIDTH, MARGIN_BOTTOM))
-
+    
         # Rafraîchit l'écran
         pygame.display.flip()
 
+    def draw_effects(self, screen):
+        """Draw all current effects on the screen."""
+        for (x, y), effect in self.current_effects:
+            # Example: Draw a semi-transparent overlay for effects
+            if effect.name == "Feu":
+                color = (255, 69, 0, 128)  # Orange with transparency
+            elif effect.name == "Poison":
+                color = (128, 0, 128, 128)  # Purple with transparency
+            elif effect.name == "Soin":
+                color = (0, 255, 0, 128)  # Green with transparency
+            else:
+                continue
+    
+            # Create a surface with the specified color
+            overlay = pygame.Surface((CELL_SIZE, CELL_SIZE))
+            overlay.set_alpha(128)  # Set transparency level
+            overlay.fill(color)
+    
+            # Draw the overlay on the specified cell
+            screen.blit(overlay, (x * CELL_SIZE, y * CELL_SIZE))
+
+
+    def apply_effect(self, target, skill):
+        """Applies an effect to all cells within the area of effect range around the target."""
+        
+        affected_cells = []
+    
+        if skill.aoe_radius == 1:  # flecheempoisonée
+            affected_cells.append((target.x, target.y))
+        elif skill.aoe_radius == 3:  # boule de feu
+            for dx in range(-2, 3):  # Cover 2 cells on each side
+                for dy in range(-2, 3):
+                    x = target.x + dx
+                    y = target.y + dy
+                    if 0 <= x < GRID_SIZE and 0 <= y < GRID_SIZE:
+                        affected_cells.append((x, y))
+    
+        for x, y in affected_cells:
+            new_effect = skill.effet.__class__()  # Create a new instance of the effect
+            new_effect.effectTTL = skill.effet.effectTTL  # Copy the effectTTL value
+            self.current_effects.append(((x, y), new_effect))
+            for unit in self.player_units + self.enemy_units:
+                if unit.x == x and unit.y == y:
+                    new_effect.apply_effect(unit)
+    
+    def update_effects(self):
+        """Apply effects to units in affected cells and reduce effect duration."""
+    
+        for (x, y), effect in self.current_effects[:]:
+            for unit in self.player_units + self.enemy_units:
+                if unit.x == x and unit.y == y:
+                    effect.apply_effect(unit)
+            
+            # Reduce effect duration
+            effect.effectTTL -= 1
+    
+        # Remove expired effects
+        self.current_effects = [((x, y), effect) for (x, y), effect in self.current_effects if effect.effectTTL > 0]
+
+
 
 def main():
-
     # Initialisation de Pygame
     pygame.init()
 
@@ -265,8 +316,11 @@ def main():
 
     # Boucle principale du jeu
     while True:
-        game.handle_player_turn() 
-        game.handle_enemy_turn() 
-        game.check_end_game() 
+        game.handle_player_turn()
+        game.handle_enemy_turn()
+        game.update_effects()
+        game.check_end_game()
+        game.flip_display()
+
 if __name__ == "__main__": 
     main()
