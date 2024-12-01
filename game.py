@@ -2,8 +2,7 @@ import pygame
 import random
 
 from unit import *
-
-MARGIN_BOTTOM = 100  # Marge en bas pour les messages
+from Constantes import GRID_SIZE, CELL_SIZE, WIDTH, HEIGHT, BLACK, WHITE, GRAY, WATER_BLUE, MARGIN_BOTTOM
 
 class Game:
     """
@@ -39,7 +38,9 @@ class Game:
                             Sorcier(7, 6, 'enemy')]
 
         self.mode_de_jeu = None
-
+        self.obstacles = {(3, 3), (4, 4), (5, 5)}
+        self.water_zones = {(2, 2), (6, 2)}
+        
     def draw_text(self, text, position, size=30, color=(255, 255, 255)):
         font = pygame.font.Font(None, size)
         text_surface = font.render(text, True, color)
@@ -99,7 +100,11 @@ class Game:
                         elif event.key == pygame.K_DOWN:
                             dy = 1
     
-                        selected_unit.move(dx, dy)
+                        selected_unit.move(dx, dy, self.obstacles, self.water_zones)
+                        if selected_unit in self.player_units and selected_unit.health <= 0:
+                            self.player_units.remove(selected_unit)
+                            has_acted = True
+                            selected_unit.is_selected = False
                         self.flip_display()
     
                         # Attaque (touche espace) met fin au tour
@@ -183,18 +188,22 @@ class Game:
         """IA très simple pour les ennemis."""
         if self.mode_de_jeu == 'PvE':
             for enemy in self.enemy_units:
-
+                if not self.player_units: 
+                    print("No player units available to target") 
+                    continue
                 # Déplacement aléatoire
                 target = random.choice(self.player_units)
                 dx = 1 if enemy.x < target.x else -1 if enemy.x > target.x else 0
                 dy = 1 if enemy.y < target.y else -1 if enemy.y > target.y else 0
-                enemy.move(dx, dy)
+                enemy.move(dx, dy, self.obstacles, self.water_zones)
 
                 # Attaque si possible
                 if abs(enemy.x - target.x) <= 1 and abs(enemy.y - target.y) <= 1:
                     enemy.attack(target)
                     if target.health <= 0:
                         self.player_units.remove(target)
+                if enemy.health <= 0:
+                    self.enemy_units.remove(enemy)
 
     def check_end_game(self):
         """Vérifie les conditions de fin de partie."""
@@ -225,6 +234,13 @@ class Game:
         for unit in self.player_units + self.enemy_units:
             unit.draw(self.screen)
 
+
+        for x, y in self.water_zones:
+            pygame.draw.rect(self.screen, WATER_BLUE, (x * CELL_SIZE, y * CELL_SIZE, CELL_SIZE, CELL_SIZE))
+
+        for x, y in self.obstacles:
+            pygame.draw.rect(self.screen, GRAY, (x * CELL_SIZE, y * CELL_SIZE, CELL_SIZE, CELL_SIZE))
+            
         # Affiche les messages en bas
         pygame.draw.rect(self.screen, BLACK, pygame.Rect(0, HEIGHT, WIDTH, MARGIN_BOTTOM))
 

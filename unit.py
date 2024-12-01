@@ -2,18 +2,7 @@ import pygame
 import random
 from abc import ABC, abstractmethod
 from Competences import *
-
-# Constantes
-GRID_SIZE = 8
-CELL_SIZE = 60
-WIDTH = GRID_SIZE * CELL_SIZE
-HEIGHT = GRID_SIZE * CELL_SIZE
-FPS = 30
-WHITE = (255, 255, 255)
-BLACK = (0, 0, 0)
-RED = (255, 0, 0)
-BLUE = (0, 0, 255)
-GREEN = (0, 255, 0)
+from Constantes import CELL_SIZE, RED, BLUE, GREEN, GRID_SIZE
 
 class Unit(ABC):
     """
@@ -65,6 +54,7 @@ class Unit(ABC):
         self.__x = x
         self.__y = y
         self.__health = health
+        self.max_health = health
         self.attack_power = attack_power
         self.defense_power = defense_power
         self.speed = speed
@@ -73,11 +63,15 @@ class Unit(ABC):
         self.is_selected = False
         self.effect_status = None
 
-    def move(self, dx, dy):
+    def move(self, dx, dy, obstacles, water_zones):
         """Déplace l'unité de dx, dy."""
-        if 0 <= self.x + dx < GRID_SIZE and 0 <= self.y + dy < GRID_SIZE:
+        if (0 <= self.x + dx < GRID_SIZE and 0 <= self.y + dy < GRID_SIZE and (self.x + dx, self.y + dy) not in obstacles):
             self.x += dx
             self.y += dy
+
+            if (self.x, self.y) in water_zones:
+                print(f"L'unité de l'équipe {self.team} est tombée dans l'eau à ({self.x}, {self.y}) et est morte !")
+                self.health = 0
 
     def attack(self, target):
         """Attaque une unité cible."""
@@ -92,7 +86,23 @@ class Unit(ABC):
                              self.y * CELL_SIZE, CELL_SIZE, CELL_SIZE))
         pygame.draw.circle(screen, color, (self.x * CELL_SIZE + CELL_SIZE //
                            2, self.y * CELL_SIZE + CELL_SIZE // 2), CELL_SIZE // 3)
+        self.draw_health_bar(screen)
 
+    def draw_health_bar(self, screen):
+        if self.health <= 0:
+            return
+
+        bar_width = CELL_SIZE - 10
+        bar_height = 5
+        health_ratio = self.health / self.max_health
+
+        x = self.x * CELL_SIZE + 5
+        y = self.y * CELL_SIZE + CELL_SIZE - 10
+
+        pygame.draw.rect(screen, RED, (x, y, bar_width, bar_height))
+        pygame.draw.rect(screen, GREEN, (x, y, bar_width * health_ratio, bar_height))
+
+        
     @abstractmethod
     def use_skill(self, target, skill):
         pass
