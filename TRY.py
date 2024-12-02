@@ -12,6 +12,39 @@ BLACK = (0, 0, 0)
 WATER_BLUE = (0, 191, 255)
 GRAY = (128, 128, 128)
 
+# Classe qui gère le déplacement des unités
+class Movement:
+    def __init__(self, unit, obstacles, water_zones, units):
+        self.unit = unit
+        self.obstacles = obstacles
+        self.water_zones = water_zones
+        self.units = units
+
+    def move(self, dx, dy):
+        """Déplace l'unité selon sa vitesse."""
+        if not self.unit.is_alive:
+            return False
+
+        for _ in range(self.unit.speed):  # Se déplace selon la vitesse de l'unité
+            new_x = self.unit.x + dx
+            new_y = self.unit.y + dy
+
+            # Vérifie si la nouvelle position est valide
+            if 0 <= new_x < GRID_SIZE and 0 <= new_y < GRID_SIZE and (new_x, new_y) not in self.obstacles:
+                self.unit.x = new_x
+                self.unit.y = new_y
+
+                # Vérifie si l'unité tombe dans une zone d'eau
+                if (self.unit.x, self.unit.y) in self.water_zones:
+                    print(f"L'unité de l'équipe {self.unit.team} est tombée dans l'eau à ({self.unit.x}, {self.unit.y}) et est morte !")
+                    self.unit.health = 0
+                    self.unit.is_alive = False
+                    return True
+            else:
+                return False  # Si une case est bloquée, l'unité ne se déplace pas
+
+        return False
+
 # Classe générique pour représenter une unité
 class Unit:
     def __init__(self, x, y, health, attack_power, defense, speed, team, unit_type, image_path):
@@ -20,7 +53,7 @@ class Unit:
         self.health = health
         self.attack_power = attack_power
         self.defense = defense
-        self.speed = speed
+        self.speed = speed  # La vitesse détermine combien de cases une unité peut se déplacer
         self.team = team
         self.unit_type = unit_type
         self.is_selected = False
@@ -28,24 +61,8 @@ class Unit:
         self.image = pygame.image.load(image_path)
         self.image = pygame.transform.scale(self.image, (CELL_SIZE, CELL_SIZE))
 
-    def move(self, dx, dy, obstacles, water_zones, units):
-        if not self.is_alive:
-            return False
-
-        new_x = self.x + dx
-        new_y = self.y + dy
-
-        if (0 <= new_x < GRID_SIZE and 0 <= new_y < GRID_SIZE and (new_x, new_y) not in obstacles):
-            self.x = new_x
-            self.y = new_y
-
-            if (self.x, self.y) in water_zones:
-                print(f"L'unité de l'équipe {self.team} est tombée dans l'eau à ({self.x}, {self.y}) et est morte !")
-                self.health = 0
-                self.is_alive = False
-                return True
-
-        return False
+        # Créer un objet de déplacement pour cette unité
+        self.movement = Movement(self, set(), set(), set())  # Pas encore d'obstacles, zones d'eau ou autres unités
 
     def attack(self, target):
         if not self.is_alive:
@@ -89,7 +106,7 @@ class Knight(Unit):
             image_path = "images/player_knight.png"
         else:
             image_path = "images/enemy_knight.png"
-        super().__init__(x, y, 10, 2, 1, 1, team, "Knight", image_path)
+        super().__init__(x, y, 10, 2, 1, 2, team, "Knight", image_path)  # Vitesse = 2
 
 
 class Archer(Unit):
@@ -98,7 +115,7 @@ class Archer(Unit):
             image_path = "images/player_archer.png"
         else:
             image_path = "images/enemy_archer.png"
-        super().__init__(x, y, 8, 3, 1, 2, team, "Archer", image_path)
+        super().__init__(x, y, 8, 3, 1, 1, team, "Archer", image_path)  # Vitesse = 1
 
 
 class Mage(Unit):
@@ -107,7 +124,7 @@ class Mage(Unit):
             image_path = "images/player_mage.png"
         else:
             image_path = "images/enemy_mage.png"
-        super().__init__(x, y, 6, 4, 0, 3, team, "Mage", image_path)
+        super().__init__(x, y, 6, 4, 0, 3, team, "Mage", image_path)  # Vitesse = 3
 
 
 # Classe principale du jeu
@@ -131,6 +148,16 @@ class Game:
 
         self.obstacles = {(3, 3), (4, 4), (5, 5)}
         self.water_zones = {(2, 2), (6, 2)}
+
+        # Lier les obstacles, les zones d'eau et les unités au mouvement
+        self.link_movement()
+
+    def link_movement(self):
+        # Associer obstacles, zones d'eau et unités aux objets de déplacement
+        for unit in self.player_units + self.enemy_units:
+            unit.movement.obstacles = self.obstacles
+            unit.movement.water_zones = self.water_zones
+            unit.movement.units = self.player_units + self.enemy_units
 
     def handle_player_turn(self):
         for selected_unit in list(self.player_units):
@@ -159,7 +186,8 @@ class Game:
                         elif event.key == pygame.K_DOWN:
                             dy = 1
 
-                        if selected_unit.move(dx, dy, self.obstacles, self.water_zones, self.player_units + self.enemy_units):
+                        # L'unité se déplace selon sa vitesse
+                        if selected_unit.movement.move(dx, dy):
                             has_acted = True
                             break
 
@@ -189,7 +217,7 @@ class Game:
             dx = 1 if enemy.x < target.x else -1 if enemy.x > target.x else 0
             dy = 1 if enemy.y < target.y else -1 if enemy.y > target.y else 0
 
-            if enemy.move(dx, dy, self.obstacles, self.water_zones, self.enemy_units + self.player_units):
+            if enemy.movement.move(dx, dy):
                 continue
 
             if abs(enemy.x - target.x) <= 1 and abs(enemy.y - target.y) <= 1:
@@ -218,26 +246,27 @@ class Game:
 
     def check_game_over(self):
         if len(self.player_units) == 0:
-            print("Les ennemis ont gagné !")
+            print("Game Over - Les ennemis ont gagné !")
             pygame.quit()
             sys.exit()
         elif len(self.enemy_units) == 0:
-            print("Le joueur a gagné !")
+            print("Game Over - Le joueur a gagné !")
             pygame.quit()
             sys.exit()
 
-def main():
-    pygame.init()
-    screen = pygame.display.set_mode((WIDTH, HEIGHT))
-    pygame.display.set_caption("Jeu avec obstacles et zones d'eau")
-    game = Game(screen)
+# Initialisation de pygame
+pygame.init()
+screen = pygame.display.set_mode((WIDTH, HEIGHT))
+pygame.display.set_caption("Strategic Battle Game")
+clock = pygame.time.Clock()
 
-    while True:
-        game.handle_player_turn()
-        game.check_game_over()
-        game.handle_enemy_turn()
-        game.check_game_over()
-        pygame.time.Clock().tick(FPS)
+# Création du jeu
+game = Game(screen)
 
-if __name__ == "__main__":
-    main()
+# Boucle de jeu
+while True:
+    game.handle_player_turn()
+    game.handle_enemy_turn()
+    game.check_game_over()
+
+    clock.tick(FPS)

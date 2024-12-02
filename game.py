@@ -1,18 +1,40 @@
-# game.py
+
 import pygame
 import sys
-from constants import GRID_SIZE, CELL_SIZE, WIDTH, HEIGHT, BLACK, WHITE, GRAY, WATER_BLUE
-from unit import Unit
+from unit import Knight, Archer, Mage
+from constants import WIDTH, HEIGHT, CELL_SIZE, WHITE, BLACK, WATER_BLUE, GRAY, FPS
+from movement import Movement
 
 class Game:
     def __init__(self, screen):
         self.screen = screen
-        self.player_units = [Unit(0, 0, 10, 2, 'player'),
-                             Unit(1, 0, 10, 2, 'player')]
-        self.enemy_units = [Unit(6, 6, 8, 1, 'enemy'),
-                            Unit(7, 6, 8, 1, 'enemy')]
+
+        # Création des unités du joueur
+        self.player_units = [
+            Knight(0, 0, 'player'),
+            Archer(1, 0, 'player'),
+            Mage(2, 0, 'player')
+        ]
+
+        # Création des unités ennemies
+        self.enemy_units = [
+            Knight(6, 6, 'enemy'),
+            Archer(7, 6, 'enemy'),
+            Mage(5, 6, 'enemy')
+        ]
+
         self.obstacles = {(3, 3), (4, 4), (5, 5)}
         self.water_zones = {(2, 2), (6, 2)}
+
+        # Lier les obstacles, les zones d'eau et les unités au mouvement
+        self.link_movement()
+
+    def link_movement(self):
+        # Associer obstacles, zones d'eau et unités aux objets de déplacement
+        for unit in self.player_units + self.enemy_units:
+            unit.movement.obstacles = self.obstacles
+            unit.movement.water_zones = self.water_zones
+            unit.movement.units = self.player_units + self.enemy_units
 
     def handle_player_turn(self):
         for selected_unit in list(self.player_units):
@@ -41,8 +63,8 @@ class Game:
                         elif event.key == pygame.K_DOWN:
                             dy = 1
 
-                        if selected_unit.move(dx, dy, self.obstacles, self.water_zones, self.player_units + self.enemy_units):
-                            self.player_units.remove(selected_unit)
+                        # L'unité se déplace selon sa vitesse
+                        if selected_unit.movement.move(dx, dy):
                             has_acted = True
                             break
 
@@ -72,8 +94,7 @@ class Game:
             dx = 1 if enemy.x < target.x else -1 if enemy.x > target.x else 0
             dy = 1 if enemy.y < target.y else -1 if enemy.y > target.y else 0
 
-            if enemy.move(dx, dy, self.obstacles, self.water_zones, self.enemy_units + self.player_units):
-                self.enemy_units.remove(enemy)
+            if enemy.movement.move(dx, dy):
                 continue
 
             if abs(enemy.x - target.x) <= 1 and abs(enemy.y - target.y) <= 1:
@@ -102,10 +123,10 @@ class Game:
 
     def check_game_over(self):
         if len(self.player_units) == 0:
-            print("Les ennemis ont gagné !")
+            print("Game Over - Les ennemis ont gagné !")
             pygame.quit()
             sys.exit()
         elif len(self.enemy_units) == 0:
-            print("Le joueur a gagné !")
+            print("Game Over - Le joueur a gagné !")
             pygame.quit()
-            sys.exit
+            sys.exit()
