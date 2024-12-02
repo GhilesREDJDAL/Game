@@ -85,17 +85,29 @@ class Unit:
 # Classes spécifiques pour chaque type d'unité
 class Knight(Unit):
     def __init__(self, x, y, team):
-        super().__init__(x, y, 10, 2, 1, 1, team, "Knight", "images/knight.png")
+        if team == 'player':
+            image_path = "images/player_knight.png"
+        else:
+            image_path = "images/enemy_knight.png"
+        super().__init__(x, y, 10, 2, 1, 1, team, "Knight", image_path)
 
 
 class Archer(Unit):
     def __init__(self, x, y, team):
-        super().__init__(x, y, 8, 3, 1, 2, team, "Archer", "images/archer.png")
+        if team == 'player':
+            image_path = "images/player_archer.png"
+        else:
+            image_path = "images/enemy_archer.png"
+        super().__init__(x, y, 8, 3, 1, 2, team, "Archer", image_path)
 
 
 class Mage(Unit):
     def __init__(self, x, y, team):
-        super().__init__(x, y, 6, 4, 0, 3, team, "Mage", "images/mage.png")
+        if team == 'player':
+            image_path = "images/player_mage.png"
+        else:
+            image_path = "images/enemy_mage.png"
+        super().__init__(x, y, 6, 4, 0, 3, team, "Mage", image_path)
 
 
 # Classe principale du jeu
