@@ -3,16 +3,15 @@ import sys
 import random
 
 # Définition des couleurs et des dimensions
-GRID_SIZE = 8
-CELL_SIZE = 60
-WIDTH = GRID_SIZE * CELL_SIZE
-HEIGHT = GRID_SIZE * CELL_SIZE
+GRID_SIZE = 8 # Augmentation de la taille de la grille à 15x15
+CELL_SIZE = 60  # Taille des cases en pixels (reste inchangée)
+WIDTH = GRID_SIZE * CELL_SIZE  # Largeur de la fenêtre, ajustée à la nouvelle taille de la grille
+HEIGHT = GRID_SIZE * CELL_SIZE  # Hauteur de la fenêtre, ajustée à la nouvelle taille de la grille
 FPS = 30
 WHITE = (255, 255, 255)
 BLACK = (0, 0, 0)
 WATER_BLUE = (0, 191, 255)
 GRAY = (128, 128, 128)
-
 # Classe qui gère le déplacement des unités
 class Movement:
     def __init__(self, unit, obstacles, water_zones, units):
@@ -155,9 +154,15 @@ class Game:
             Archer(7, 6, 'enemy'),
             Mage(5, 6, 'enemy')
         ]
-
-        self.obstacles = {(3, 3), (4, 4), (5, 5)}
+        self.obstacles = {(3, 3),(3,4),(4,3),(5,4),(4,5), (4, 4), (5, 5)}
         self.water_zones = {(2, 2), (6, 2)}
+
+        
+
+
+    
+
+       
 
         # Lier les obstacles, zones d'eau et unités au mouvement
         self.link_movement()
