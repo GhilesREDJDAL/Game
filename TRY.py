@@ -1,5 +1,6 @@
 import pygame
 import sys
+import random
 
 # Définition des couleurs et des dimensions
 GRID_SIZE = 8
@@ -29,19 +30,27 @@ class Movement:
             new_x = self.unit.x + dx
             new_y = self.unit.y + dy
 
-            # Vérifie si la nouvelle position est valide
-            if 0 <= new_x < GRID_SIZE and 0 <= new_y < GRID_SIZE and (new_x, new_y) not in self.obstacles:
-                self.unit.x = new_x
-                self.unit.y = new_y
-
-                # Vérifie si l'unité tombe dans une zone d'eau
-                if (self.unit.x, self.unit.y) in self.water_zones:
-                    print(f"L'unité de l'équipe {self.unit.team} est tombée dans l'eau à ({self.unit.x}, {self.unit.y}) et est morte !")
-                    self.unit.health = 0
-                    self.unit.is_alive = False
-                    return True
+            # Si l'unité est un Mage, ignore les obstacles
+            if isinstance(self.unit, Mage):
+                if 0 <= new_x < GRID_SIZE and 0 <= new_y < GRID_SIZE:
+                    self.unit.x = new_x
+                    self.unit.y = new_y
+                else:
+                    return False  # Si la position est hors limites
             else:
-                return False  # Si une case est bloquée, l'unité ne se déplace pas
+                # Vérifie si la nouvelle position est valide pour les autres unités
+                if 0 <= new_x < GRID_SIZE and 0 <= new_y < GRID_SIZE and (new_x, new_y) not in self.obstacles:
+                    self.unit.x = new_x
+                    self.unit.y = new_y
+
+                    # Vérifie si l'unité tombe dans une zone d'eau
+                    if (self.unit.x, self.unit.y) in self.water_zones:
+                        print(f"L'unité de l'équipe {self.unit.team} est tombée dans l'eau à ({self.unit.x}, {self.unit.y}) et est morte !")
+                        self.unit.health = 0
+                        self.unit.is_alive = False
+                        return True
+                else:
+                    return False  # Si une case est bloquée, l'unité ne se déplace pas
 
         return False
 
@@ -132,6 +141,11 @@ class Game:
     def __init__(self, screen):
         self.screen = screen
 
+        # Initialisation des unités
+        self.reset_game()
+
+    def reset_game(self):
+        """Réinitialise le jeu avec de nouvelles unités et obstacles."""
         # Création des unités du joueur
         self.player_units = [
             Knight(0, 0, 'player'),
@@ -149,7 +163,7 @@ class Game:
         self.obstacles = {(3, 3), (4, 4), (5, 5)}
         self.water_zones = {(2, 2), (6, 2)}
 
-        # Lier les obstacles, les zones d'eau et les unités au mouvement
+        # Lier les obstacles, zones d'eau et unités au mouvement
         self.link_movement()
 
     def link_movement(self):
@@ -158,6 +172,18 @@ class Game:
             unit.movement.obstacles = self.obstacles
             unit.movement.water_zones = self.water_zones
             unit.movement.units = self.player_units + self.enemy_units
+
+    def check_game_over(self):
+        """Vérifie si une équipe a perdu toutes ses unités."""
+        if not self.player_units:
+            print("L'équipe du joueur a perdu !")
+            self.display_game_over('enemy')
+            return True
+        if not self.enemy_units:
+            print("L'équipe ennemie a perdu !")
+            self.display_game_over('player')
+            return True
+        return False
 
     def handle_player_turn(self):
         for selected_unit in list(self.player_units):
@@ -198,75 +224,72 @@ class Game:
                                 if abs(selected_unit.x - enemy.x) <= 1 and abs(selected_unit.y - enemy.y) <= 1:
                                     selected_unit.attack(enemy)
                                     if not enemy.is_alive:
-                                        print(f"Un ennemi à ({enemy.x}, {enemy.y}) a été tué !")
                                         self.enemy_units.remove(enemy)
-
                             has_acted = True
-                            selected_unit.is_selected = False
 
     def handle_enemy_turn(self):
-        for enemy in list(self.enemy_units):
+        for enemy in self.enemy_units:
             if not enemy.is_alive:
-                self.enemy_units.remove(enemy)
                 continue
 
-            if len(self.player_units) == 0:
-                break
+            has_acted = False
+            while not has_acted:
+                direction = random.choice([(1, 0), (-1, 0), (0, 1), (0, -1)])
+                if enemy.movement.move(*direction):
+                    has_acted = True
 
-            target = min(self.player_units, key=lambda p: abs(p.x - enemy.x) + abs(p.y - enemy.y))
-            dx = 1 if enemy.x < target.x else -1 if enemy.x > target.x else 0
-            dy = 1 if enemy.y < target.y else -1 if enemy.y > target.y else 0
+                for player in self.player_units:
+                    if abs(enemy.x - player.x) <= 1 and abs(enemy.y - player.y) <= 1:
+                        enemy.attack(player)
+                        if not player.is_alive:
+                            print(f"Un joueur à ({player.x}, {player.y}) a été tué !")
+                            self.player_units.remove(player)
+                        has_acted = True
 
-            if enemy.movement.move(dx, dy):
-                continue
-
-            if abs(enemy.x - target.x) <= 1 and abs(enemy.y - target.y) <= 1:
-                enemy.attack(target)
-                if not target.is_alive:
-                    print(f"L'unité du joueur à ({target.x}, {target.y}) a été tuée !")
-                    self.player_units.remove(target)
+            if self.check_game_over():
+                return
 
     def flip_display(self):
         self.screen.fill(BLACK)
-        for x in range(0, WIDTH, CELL_SIZE):
-            for y in range(0, HEIGHT, CELL_SIZE):
-                rect = pygame.Rect(x, y, CELL_SIZE, CELL_SIZE)
-                pygame.draw.rect(self.screen, WHITE, rect, 1)
-
-        for x, y in self.water_zones:
-            pygame.draw.rect(self.screen, WATER_BLUE, (x * CELL_SIZE, y * CELL_SIZE, CELL_SIZE, CELL_SIZE))
 
         for x, y in self.obstacles:
             pygame.draw.rect(self.screen, GRAY, (x * CELL_SIZE, y * CELL_SIZE, CELL_SIZE, CELL_SIZE))
+
+        for x, y in self.water_zones:
+            pygame.draw.rect(self.screen, WATER_BLUE, (x * CELL_SIZE, y * CELL_SIZE, CELL_SIZE, CELL_SIZE))
 
         for unit in self.player_units + self.enemy_units:
             unit.draw(self.screen)
 
         pygame.display.flip()
 
-    def check_game_over(self):
-        if len(self.player_units) == 0:
-            print("Game Over - Les ennemis ont gagné !")
-            pygame.quit()
-            sys.exit()
-        elif len(self.enemy_units) == 0:
-            print("Game Over - Le joueur a gagné !")
-            pygame.quit()
-            sys.exit()
+    def display_game_over(self, winner):
+        font = pygame.font.Font(None, 50)
+        if winner == 'player':
+            message = "Vous avez gagné !"
+        else:
+            message = "Vous avez perdu !"
 
-# Initialisation de pygame
+        text = font.render(message, True, (255, 255, 255))
+        text_rect = text.get_rect(center=(WIDTH // 2, HEIGHT // 2))
+        self.screen.blit(text, text_rect)
+        pygame.display.flip()
+        pygame.time.wait(2000)  # Afficher le message pendant 2 secondes
+
+        # Réinitialiser le jeu après la fin
+        self.reset_game()
+
+# Initialisation de Pygame
 pygame.init()
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
-pygame.display.set_caption("Strategic Battle Game")
+pygame.display.set_caption("Jeu de Stratégie")
 clock = pygame.time.Clock()
 
 # Création du jeu
 game = Game(screen)
 
-# Boucle de jeu
+# Boucle principale du jeu
 while True:
     game.handle_player_turn()
     game.handle_enemy_turn()
-    game.check_game_over()
-
     clock.tick(FPS)
