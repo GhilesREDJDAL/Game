@@ -1,21 +1,20 @@
 import pygame
+import sys
 from game import Game
 from constants import WIDTH, HEIGHT, FPS
 
-# Initialisation de pygame
+# Initialisation de Pygame
 pygame.init()
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
-pygame.display.set_caption("Strategic Battle Game")
+pygame.display.set_caption("Jeu de Stratégie")
 clock = pygame.time.Clock()
 
 # Création du jeu
 game = Game(screen)
 
-# Boucle de jeu
+# Boucle principale du jeu
 while True:
     game.handle_player_turn()
     game.handle_enemy_turn()
-    game.check_game_over()
-
     clock.tick(FPS)
- 
+  
