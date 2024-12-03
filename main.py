@@ -18,3 +18,4 @@ while True:
     game.check_game_over()
 
     clock.tick(FPS)
+ 
