@@ -140,20 +140,16 @@ class Mage(Unit):
 class Game:
     def __init__(self, screen):
         self.screen = screen
-
-        # Initialisation des unités
-        self.reset_game()
+        self.reset_game()  # Initialiser le jeu dès le début
 
     def reset_game(self):
         """Réinitialise le jeu avec de nouvelles unités et obstacles."""
-        # Création des unités du joueur
         self.player_units = [
             Knight(0, 0, 'player'),
             Archer(1, 0, 'player'),
             Mage(2, 0, 'player')
         ]
 
-        # Création des unités ennemies
         self.enemy_units = [
             Knight(6, 6, 'enemy'),
             Archer(7, 6, 'enemy'),
@@ -224,20 +220,32 @@ class Game:
                                 if abs(selected_unit.x - enemy.x) <= 1 and abs(selected_unit.y - enemy.y) <= 1:
                                     selected_unit.attack(enemy)
                                     if not enemy.is_alive:
+                                        print(f"Un ennemi à ({enemy.x}, {enemy.y}) a été tué !")
                                         self.enemy_units.remove(enemy)
+
                             has_acted = True
+                            selected_unit.is_selected = False
+
+            if self.check_game_over():
+                return
 
     def handle_enemy_turn(self):
-        for enemy in self.enemy_units:
+        for enemy in list(self.enemy_units):
             if not enemy.is_alive:
+                self.enemy_units.remove(enemy)
                 continue
+
+            enemy.is_selected = True
+            self.flip_display()
 
             has_acted = False
             while not has_acted:
+                # Déplacement et attaque de l'ennemi
                 direction = random.choice([(1, 0), (-1, 0), (0, 1), (0, -1)])
                 if enemy.movement.move(*direction):
                     has_acted = True
 
+                # Attaquer une unité si à portée
                 for player in self.player_units:
                     if abs(enemy.x - player.x) <= 1 and abs(enemy.y - player.y) <= 1:
                         enemy.attack(player)
@@ -252,9 +260,11 @@ class Game:
     def flip_display(self):
         self.screen.fill(BLACK)
 
+        # Affichage des obstacles
         for x, y in self.obstacles:
             pygame.draw.rect(self.screen, GRAY, (x * CELL_SIZE, y * CELL_SIZE, CELL_SIZE, CELL_SIZE))
 
+        # Affichage des zones d'eau
         for x, y in self.water_zones:
             pygame.draw.rect(self.screen, WATER_BLUE, (x * CELL_SIZE, y * CELL_SIZE, CELL_SIZE, CELL_SIZE))
 
@@ -276,8 +286,7 @@ class Game:
         pygame.display.flip()
         pygame.time.wait(2000)  # Afficher le message pendant 2 secondes
 
-        # Réinitialiser le jeu après la fin
-        self.reset_game()
+        self.reset_game()  # Réinitialiser le jeu après le message de fin
 
 # Initialisation de Pygame
 pygame.init()
