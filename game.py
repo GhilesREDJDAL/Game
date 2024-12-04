@@ -5,8 +5,8 @@ from unit import *
 
 
 # Constantes pour le jeu
-CELL_SIZE = 16
-GRID_SIZE = 50
+CELL_SIZE = 60
+GRID_SIZE = 10
 WIDTH = GRID_SIZE * CELL_SIZE
 HEIGHT = GRID_SIZE * CELL_SIZE
 FPS = 30
@@ -39,9 +39,10 @@ class Game:
         self.screen = screen
         self.map = self.load_map(mapfile)
         self.tile_images = {
-            "241": pygame.image.load("grass.png"),
-            "1754": pygame.image.load("water.png"),
-            "424": pygame.image.load("stone.png"),
+            "11": pygame.image.load("grass.png"),
+            "9": pygame.image.load("prize.png"),
+            "121": pygame.image.load("stone.png"),
+            "8" : pygame.image.load("water.png"),
         }
         self.player_units = [Unit(0, 0, 10, 2, 'player'),
                              Unit(1, 0, 10, 2, 'player')]
@@ -143,12 +144,15 @@ def main():
     clock = pygame.time.Clock()
     
     # Charger le jeu avec le fichier de carte
-    game = Game(screen, "maptest.csv")  # Remplacez par le chemin vers votre fichier de carte
+    game = Game(screen, "maptest2.csv")  # Remplacez par le chemin vers votre fichier de carte
     
     # Boucle principale du jeu
     while True:
         game.handle_player_turn()
         game.handle_enemy_turn()
+        if event.type==pygame.QUIT:
+            pygame.quit() #closing window  
+            exit() #closing the loop
 
 if __name__ == "__main__":
     main()
