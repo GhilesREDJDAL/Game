@@ -2,15 +2,9 @@ import pygame
 import random
 import csv  # Ensure the csv module is imported at the top of your file
 from unit import *
+from constantes import *
 
 
-# Constantes pour le jeu
-CELL_SIZE = 60
-GRID_SIZE = 10
-WIDTH = GRID_SIZE * CELL_SIZE
-HEIGHT = GRID_SIZE * CELL_SIZE
-FPS = 30
-BLACK = (0, 0, 0)
 
 class Game:
     """
@@ -63,11 +57,10 @@ class Game:
                 # Important: cette boucle permet de gérer les événements Pygame
                 for event in pygame.event.get():
 
-                    # Gestion de la fermeture de la fenêtre
-                    if event.type == pygame.QUIT:
-                        pygame.quit()
-                        exit()
-
+                    
+                    if event.type==pygame.QUIT:
+                        pygame.quit() #closing window  
+                        exit() #closing the loop
                     # Gestion des touches du clavier
                     if event.type == pygame.KEYDOWN:
 
@@ -150,9 +143,7 @@ def main():
     while True:
         game.handle_player_turn()
         game.handle_enemy_turn()
-        if event.type==pygame.QUIT:
-            pygame.quit() #closing window  
-            exit() #closing the loop
+        
 
 if __name__ == "__main__":
     main()
