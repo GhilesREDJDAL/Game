@@ -64,15 +64,19 @@ class Unit(ABC):
         self.is_selected = False
         self.effect_status = None
 
-    def move(self, dx, dy, obstacles, water_zones):
-        """Déplace l'unité de dx, dy."""
+    def move(self, dx, dy, obstacles, water_zones, screen):
+        """Déplace l'unité de dx, dy en vérifiant les obstacles et les zones d'eau."""
         if (0 <= self.x + dx < GRID_SIZE and 0 <= self.y + dy < GRID_SIZE and (self.x + dx, self.y + dy) not in obstacles):
             self.x += dx
             self.y += dy
-
+            # Si les coordonnées correspondent à une zone d'eau:
             if (self.x, self.y) in water_zones:
-                print(f"L'unité de l'équipe {self.team} est tombée dans l'eau à ({self.x}, {self.y}) et est morte !")
+                draw_text(screen, f"L'unité de l'équipe {self.team} est tombée dans l'eau à ({self.x}, {self.y}) et est morte !", (10, HEIGHT + 10))
+                pygame.display.flip()
+                pygame.time.wait(2000)  # Attendre 2 secondes pour que le message soit visible
+                # L'unité meurt
                 self.health = 0
+
 
     def attack(self, target):
         """Attaque une unité cible."""
@@ -148,19 +152,124 @@ class Unit(ABC):
         return True
         
 class Archer(Unit):
+    """
+    Classe représentant un archer.
+
+    ...
+    Attributs
+    ---------
+    x : int
+        La position x de l'unité sur la grille.
+    y : int
+        La position y de l'unité sur la grille.
+    team : str
+        L'équipe de l'unité ('player' ou 'enemy').
+    type : str
+        Le type de l'unité (ici, "Ranged").
+    skills : list
+        La liste des compétences de l'unité.
+
+    Méthodes
+    --------
+    __init__(x, y, team)
+        Initialise les attributs spécifiques de l'unité Archer.
+    """
+
     def __init__(self, x, y, team):
+        """
+        Initialise les attributs spécifiques de l'unité Archer.
+
+        Paramètres
+        ----------
+        x : int
+            La position x de l'unité sur la grille.
+        y : int
+            La position y de l'unité sur la grille.
+        team : str
+            L'équipe de l'unité ('player' ou 'enemy').
+        """
         super().__init__(x, y, 100, 100, 50, 4, 0.1, 0.1, team)
         self.type = "Ranged"
         self.skills = [TirArc(), FlecheEmpoisonnee()]
 
 class Sorcier(Unit):
+    """
+    Classe représentant un sorcier.
+
+    ...
+    Attributs
+    ---------
+    x : int
+        La position x de l'unité sur la grille.
+    y : int
+        La position y de l'unité sur la grille.
+    team : str
+        L'équipe de l'unité ('player' ou 'enemy').
+    type : str
+        Le type de l'unité (ici, "Ranged").
+    skills : list
+        La liste des compétences de l'unité.
+
+    Méthodes
+    --------
+    __init__(x, y, team)
+        Initialise les attributs spécifiques de l'unité Sorcier.
+    """
+
     def __init__(self, x, y, team):
+        """
+        Initialise les attributs spécifiques de l'unité Sorcier.
+
+        Paramètres
+        ----------
+        x : int
+            La position x de l'unité sur la grille.
+        y : int
+            La position y de l'unité sur la grille.
+        team : str
+            L'équipe de l'unité ('player' ou 'enemy').
+        """
         super().__init__(x, y, 75, 100, 75, 3, 0.1, 0.1, team)
         self.type = "Ranged"
-        self.skills = [BouleDeFeu()] # Gele() à ajouter plus tard
+        self.skills = [BouleDeFeu()]  # Gele() à ajouter plus tard
 
 class Guerrier(Unit):
+    """
+    Classe représentant un guerrier.
+
+    ...
+    Attributs
+    ---------
+    x : int
+        La position x de l'unité sur la grille.
+    y : int
+        La position y de l'unité sur la grille.
+    team : str
+        L'équipe de l'unité ('player' ou 'enemy').
+    type : str
+        Le type de l'unité (ici, "Physical").
+    skills : list
+        La liste des compétences de l'unité.
+
+    Méthodes
+    --------
+    __init__(x, y, team)
+        Initialise les attributs spécifiques de l'unité Guerrier.
+    """
+
     def __init__(self, x, y, team):
+        """
+        Initialise les attributs spécifiques de l'unité Guerrier.
+
+        Paramètres
+        ----------
+        x : int
+            La position x de l'unité sur la grille.
+        y : int
+            La position y de l'unité sur la grille.
+        team : str
+            L'équipe de l'unité ('player' ou 'enemy').
+        """
         super().__init__(x, y, 150, 100, 100, 3, 0.1, 0.1, team)
         self.type = "Physical"
         self.skills = [CoupDEpee(), CoupDeBouclier()]

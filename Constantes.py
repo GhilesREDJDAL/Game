@@ -1,18 +1,18 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Created on Sun Dec  1 15:42:39 2024
+Created on Sun Dec 1 15:42:39 2024
 
 @author: seb
 """
 
-
-# Constantes
+""" Constantes"""
 GRID_SIZE = 12
 CELL_SIZE = 60
 WIDTH = GRID_SIZE * CELL_SIZE
 HEIGHT = GRID_SIZE * CELL_SIZE
 FPS = 30
+#Couleurs:
 WHITE = (255, 255, 255)
 BLACK = (0, 0, 0)
 RED = (255, 0, 0)
