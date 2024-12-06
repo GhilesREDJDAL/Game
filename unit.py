@@ -34,7 +34,7 @@ class Unit(ABC):
         Dessine l'unité sur la grille.
     """
 
-    def __init__(self, x, y, health, attack_power, defense_power, speed, team):
+    def __init__(self, x, y, health, attack_power, defense_power, speed, crit, dodge, team):
         """
         Construit une unité avec une position, une santé, une puissance d'attaque et une équipe.
 
@@ -58,7 +58,8 @@ class Unit(ABC):
         self.attack_power = attack_power
         self.defense_power = defense_power
         self.speed = speed
-        self.critical_rate = 1
+        self.crit = crit
+        self.dodge = dodge
         self.team = team  # 'player' ou 'enemy'
         self.is_selected = False
         self.effect_status = None
@@ -80,7 +81,11 @@ class Unit(ABC):
 
     def draw(self, screen):
         """Affiche l'unité sur l'écran."""
-        color = BLUE if self.team == 'player' else RED
+        if self.team == 'Joueur' or self.team == 'Equipe 1':
+            color = BLUE
+        else :
+            color = RED
+            
         if self.is_selected:
             pygame.draw.rect(screen, GREEN, (self.x * CELL_SIZE,
                              self.y * CELL_SIZE, CELL_SIZE, CELL_SIZE))
@@ -101,11 +106,6 @@ class Unit(ABC):
 
         pygame.draw.rect(screen, RED, (x, y, bar_width, bar_height))
         pygame.draw.rect(screen, GREEN, (x, y, bar_width * health_ratio, bar_height))
-
-        
-    @abstractmethod
-    def use_skill(self, target, skill):
-        pass
     
     def take_damage(self, damage):
         self.health = max(0, self.health - damage)
@@ -143,29 +143,24 @@ class Unit(ABC):
         else:
             raise TypeError(f"La valeur doit être un entier compris entre 0 et {GRID_SIZE} ")
 
+    def use_skill(self, target, skill, screen):
+        skill.use(self, target, screen)
+        return True
+        
 class Archer(Unit):
     def __init__(self, x, y, team):
-        super().__init__(x, y, 100, 100, 50, 125, team)
+        super().__init__(x, y, 100, 100, 50, 4, 0.1, 0.1, team)
         self.type = "Ranged"
         self.skills = [TirArc(), FlecheEmpoisonnee()]
 
-    def use_skill(self, target, skill):
-        skill.use(self, target)
-
 class Sorcier(Unit):
     def __init__(self, x, y, team):
-        super().__init__(x, y, 75, 100, 75, 75, team)
+        super().__init__(x, y, 75, 100, 75, 3, 0.1, 0.1, team)
         self.type = "Ranged"
         self.skills = [BouleDeFeu()] # Gele() à ajouter plus tard
 
-    def use_skill(self, target, skill):
-        skill.use(self, target)
-
 class Guerrier(Unit):
     def __init__(self, x, y, team):
-        super().__init__(x, y, 150, 100, 100, 20, team)
+        super().__init__(x, y, 150, 100, 100, 3, 0.1, 0.1, team)
         self.type = "Physical"
         self.skills = [CoupDEpee(), CoupDeBouclier()]
-
-    def use_skill(self, target, skill):
-        skill.use(self, target)
