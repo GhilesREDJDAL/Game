@@ -70,7 +70,7 @@ class Game:
         self.obstacles = {(3, 3), (4, 4), (5, 5)}
         self.water_zones = {(2, 2), (6, 2)}
         self.current_effects = []
-
+        
     def afficher_menu(self):
         global GAME_CONTINUE
         """Affiche le menu de sélection du mode de jeu."""

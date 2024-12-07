@@ -4,6 +4,22 @@ from abc import ABC, abstractmethod
 from Competences import *
 from Constantes import CELL_SIZE, RED, BLUE, GREEN, GRID_SIZE
 
+# On charge les images utilisées pour l'environnement (herbe, eau et obstacles)
+player_archer = pygame.image.load('images/player_archer.png')
+player_knight = pygame.image.load('images/player_knight.png')
+player_mage = pygame.image.load('images/player_mage.png')
+enemy_archer = pygame.image.load('images/enemy_archer.png')
+enemy_knight = pygame.image.load('images/enemy_knight.png')
+enemy_mage = pygame.image.load('images/enemy_mage.png')
+
+# On met les images à la bonne échelle.
+player_archer = pygame.transform.scale(player_archer, (CELL_SIZE*0.9, CELL_SIZE*0.9))
+player_knight = pygame.transform.scale(player_knight, (CELL_SIZE*0.9, CELL_SIZE*0.9))
+player_mage = pygame.transform.scale(player_mage, (CELL_SIZE*0.9, CELL_SIZE*0.9))
+enemy_archer = pygame.transform.scale(enemy_archer, (CELL_SIZE*0.9, CELL_SIZE*0.9))
+enemy_knight = pygame.transform.scale(enemy_knight, (CELL_SIZE*0.9, CELL_SIZE*0.9))
+enemy_mage = pygame.transform.scale(enemy_mage, (CELL_SIZE*0.9, CELL_SIZE*0.9))
+
 class Unit(ABC):
     """
     Classe pour représenter une unité.
@@ -84,18 +100,28 @@ class Unit(ABC):
             target.health = max(0, target.health - self.attack_power)
 
     def draw(self, screen):
-        """Affiche l'unité sur l'écran."""
-        if self.team == 'Joueur' or self.team == 'Equipe 1':
-            color = BLUE
-        else :
-            color = RED
-            
+        """Affiche l'unité sur l'écran."""        
         if self.is_selected:
             pygame.draw.rect(screen, GREEN, (self.x * CELL_SIZE,
                              self.y * CELL_SIZE, CELL_SIZE, CELL_SIZE))
-        pygame.draw.circle(screen, color, (self.x * CELL_SIZE + CELL_SIZE //
-                           2, self.y * CELL_SIZE + CELL_SIZE // 2), CELL_SIZE // 3)
+            
+        if self.team == 'Joueur' or self.team == 'Equipe 1': 
+            if isinstance(self, Archer):
+                screen.blit(player_archer, (self.x * CELL_SIZE + (CELL_SIZE * 0.05), self.y * CELL_SIZE + (CELL_SIZE * 0.05)))
+            elif isinstance(self, Guerrier):
+                screen.blit(player_knight, (self.x * CELL_SIZE + (CELL_SIZE * 0.05), self.y * CELL_SIZE + (CELL_SIZE * 0.05)))
+            elif isinstance(self, Sorcier):
+                screen.blit(player_mage, (self.x * CELL_SIZE + (CELL_SIZE * 0.05), self.y * CELL_SIZE + (CELL_SIZE * 0.05)))
+        else:
+            if isinstance(self, Archer):
+                screen.blit(enemy_archer, (self.x * CELL_SIZE + (CELL_SIZE * 0.05), self.y * CELL_SIZE + (CELL_SIZE * 0.05)))
+            elif isinstance(self, Guerrier):
+                screen.blit(enemy_knight, (self.x * CELL_SIZE + (CELL_SIZE * 0.05), self.y * CELL_SIZE + (CELL_SIZE * 0.05)))
+            elif isinstance(self, Sorcier):
+                screen.blit(enemy_mage, (self.x * CELL_SIZE + (CELL_SIZE * 0.05), self.y * CELL_SIZE + (CELL_SIZE * 0.05)))
+                
         self.draw_health_bar(screen)
+
 
     def draw_health_bar(self, screen):
         if self.health <= 0:

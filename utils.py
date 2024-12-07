@@ -9,6 +9,17 @@ Created on Thu Dec 5 16:32:40 2024
 import pygame
 from Constantes import WATER_BLUE, WHITE ,GRAY, BLACK, WIDTH, HEIGHT, CELL_SIZE, MARGIN_BOTTOM
 
+# On charge les images utilisées pour l'environnement (herbe, eau et obstacles)
+grass_image = pygame.image.load('images/grass.png')
+water_image = pygame.image.load('images/water.png')
+obstacle_image = pygame.image.load('images/stone.png')
+
+# On met les images à la bonne échelle.
+grass_image = pygame.transform.scale(grass_image, (CELL_SIZE, CELL_SIZE))
+water_image = pygame.transform.scale(water_image, (CELL_SIZE, CELL_SIZE))
+obstacle_image = pygame.transform.scale(obstacle_image, (CELL_SIZE, CELL_SIZE))
+        
+
 def draw_text(screen, text, position, size=30, color=(255, 255, 255)):
     """Affiche du texte sur l'écran."""
     font = pygame.font.Font(None, size)
@@ -22,9 +33,10 @@ def draw_text(screen, text, position, size=30, color=(255, 255, 255)):
 def flip_display(screen, player_units, enemy_units, water_zones, obstacles, current_effects):
     """Affiche le jeu."""
     # Affiche la grille
-    screen.fill(BLACK)
+    #screen.fill(BLACK)
     for x in range(0, WIDTH, CELL_SIZE):
         for y in range(0, HEIGHT, CELL_SIZE):
+            screen.blit(grass_image, (x, y))
             rect = pygame.Rect(x, y, CELL_SIZE, CELL_SIZE)
             pygame.draw.rect(screen, WHITE, rect, 1)
 
@@ -34,11 +46,11 @@ def flip_display(screen, player_units, enemy_units, water_zones, obstacles, curr
 
     # Affiche les zones d'eau
     for x, y in water_zones:
-        pygame.draw.rect(screen, WATER_BLUE, (x * CELL_SIZE, y * CELL_SIZE, CELL_SIZE, CELL_SIZE))
+        screen.blit(water_image, (x * CELL_SIZE, y * CELL_SIZE))
 
     # Affiche les obstacles
     for x, y in obstacles:
-        pygame.draw.rect(screen, GRAY, (x * CELL_SIZE, y * CELL_SIZE, CELL_SIZE, CELL_SIZE))
+        screen.blit(obstacle_image, (x * CELL_SIZE, y * CELL_SIZE))
 
     # Affiche les effets à l'écran
     draw_effects(screen, current_effects)
