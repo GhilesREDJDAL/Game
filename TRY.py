@@ -15,6 +15,16 @@ GRAY = (128, 128, 128)
 GREEN = (0, 255, 0)
 RED = (255, 0, 0)
 
+# Charger les images pour les cases spéciales
+STONE_IMAGE = pygame.image.load("images/stone.png")
+WATER_IMAGE = pygame.image.load("images/water.png")
+BONUS_IMAGE = pygame.image.load("images/bonus.png")
+
+# Redimensionner les images pour correspondre à la taille des cellules
+STONE_IMAGE = pygame.transform.scale(STONE_IMAGE, (CELL_SIZE, CELL_SIZE))
+WATER_IMAGE = pygame.transform.scale(WATER_IMAGE, (CELL_SIZE, CELL_SIZE))
+BONUS_IMAGE = pygame.transform.scale(BONUS_IMAGE, (CELL_SIZE, CELL_SIZE))
+
 # Classe qui gère le déplacement des unités
 class Movement:
     def __init__(self, unit, obstacles, water_zones, units, bonuses):
@@ -147,10 +157,85 @@ class Mage(Unit):
             image_path = "images/enemy_mage.png"
         super().__init__(x, y, 6, 4, 0, 3, team, "Mage", image_path)  # Vitesse = 3
 
+# Classe pour gérer les animations
+class AnimationManager:
+    def __init__(self, screen):
+        self.screen = screen
+
+    def animate_movement(self, unit, dx, dy, obstacles, water_zones, bonuses, units):
+        """Anime le déplacement de l'unité."""
+        start_x = unit.x * CELL_SIZE
+        start_y = unit.y * CELL_SIZE
+        end_x = (unit.x + dx) * CELL_SIZE
+        end_y = (unit.y + dy) * CELL_SIZE
+        steps = 10
+        for step in range(steps):
+            x = start_x + (end_x - start_x) * step / steps
+            y = start_y + (end_y - start_y) * step / steps
+            self.screen.fill(BLACK)
+            self.draw_grid(obstacles, water_zones, bonuses)
+            self.draw_units(units)
+            self.screen.blit(unit.image, (x, y))
+            pygame.display.flip()
+            pygame.time.wait(50)
+
+    def animate_attack(self, attacker, defender, obstacles, water_zones, bonuses, units):
+        """Anime l'attaque de l'unité."""
+        self.screen.fill(BLACK)
+        self.draw_grid(obstacles, water_zones, bonuses)
+        self.draw_units(units)
+        pygame.draw.line(self.screen, RED,
+                         (attacker.x * CELL_SIZE + CELL_SIZE // 2, attacker.y * CELL_SIZE + CELL_SIZE // 2),
+                         (defender.x * CELL_SIZE + CELL_SIZE // 2, defender.y * CELL_SIZE + CELL_SIZE // 2),
+                         5)
+        pygame.display.flip()
+        pygame.time.wait(200)
+
+    def animate_death(self, unit, obstacles, water_zones, bonuses, units):
+        """Anime la mort de l'unité."""
+        for alpha in range(255, 0, -10):
+            self.screen.fill(BLACK)
+            self.draw_grid(obstacles, water_zones, bonuses)
+            self.draw_units(units)
+            unit.image.set_alpha(alpha)
+            self.screen.blit(unit.image, (unit.x * CELL_SIZE, unit.y * CELL_SIZE))
+            pygame.display.flip()
+            pygame.time.wait(50)
+
+    def animate_bonus(self, unit, obstacles, water_zones, bonuses, units):
+        """Anime le bonus de l'unité."""
+        for alpha in range(0, 255, 10):
+            self.screen.fill(BLACK)
+            self.draw_grid(obstacles, water_zones, bonuses)
+            self.draw_units(units)
+            bonus_image = pygame.Surface((CELL_SIZE, CELL_SIZE), pygame.SRCALPHA)
+            bonus_image.fill((0, 255, 0, alpha))
+            self.screen.blit(bonus_image, (unit.x * CELL_SIZE, unit.y * CELL_SIZE))
+            pygame.display.flip()
+            pygame.time.wait(50)
+
+    def draw_grid(self, obstacles, water_zones, bonuses):
+        # Affichage des obstacles
+        for x, y in obstacles:
+            self.screen.blit(STONE_IMAGE, (x * CELL_SIZE, y * CELL_SIZE))
+
+        # Affichage des zones d'eau
+        for x, y in water_zones:
+            self.screen.blit(WATER_IMAGE, (x * CELL_SIZE, y * CELL_SIZE))
+
+        # Affichage des bonus
+        for x, y in bonuses:
+            self.screen.blit(BONUS_IMAGE, (x * CELL_SIZE, y * CELL_SIZE))
+
+    def draw_units(self, units):
+        for unit in units:
+            unit.draw(self.screen)
+
 # Classe principale du jeu
 class Game:
     def __init__(self, screen):
         self.screen = screen
+        self.animation_manager = AnimationManager(screen)
         self.reset_game()  # Initialiser le jeu dès le début
 
     def reset_game(self):
@@ -232,7 +317,7 @@ class Game:
 
                         # L'unité se déplace selon sa vitesse
                         if selected_unit.movement.move(dx, dy):
-                            self.animate_movement(selected_unit, dx, dy)
+                            self.animation_manager.animate_movement(selected_unit, dx, dy, self.obstacles, self.water_zones, self.bonuses, self.player_units + self.enemy_units)
                             has_acted = True
                             break
 
@@ -241,10 +326,11 @@ class Game:
                         if event.key == pygame.K_SPACE:
                             for enemy in list(self.enemy_units):
                                 if abs(selected_unit.x - enemy.x) <= 1 and abs(selected_unit.y - enemy.y) <= 1:
-                                    self.animate_attack(selected_unit, enemy)
+                                    self.animation_manager.animate_attack(selected_unit, enemy, self.obstacles, self.water_zones, self.bonuses, self.player_units + self.enemy_units)
                                     selected_unit.attack(enemy)
                                     if not enemy.is_alive:
                                         print(f"Un ennemi à ({enemy.x}, {enemy.y}) a été tué !")
+                                        self.animation_manager.animate_death(enemy, self.obstacles, self.water_zones, self.bonuses, self.player_units + self.enemy_units)
                                         self.enemy_units.remove(enemy)
 
                             has_acted = True
@@ -267,72 +353,27 @@ class Game:
                 # Déplacement et attaque de l'ennemi
                 direction = random.choice([(1, 0), (-1, 0), (0, 1), (0, -1)])
                 if enemy.movement.move(*direction):
-                    self.animate_movement(enemy, *direction)
+                    self.animation_manager.animate_movement(enemy, *direction, self.obstacles, self.water_zones, self.bonuses, self.player_units + self.enemy_units)
                     has_acted = True
 
                 # Attaquer une unité si à portée
                 for player in self.player_units:
                     if abs(enemy.x - player.x) <= 1 and abs(enemy.y - player.y) <= 1:
-                        self.animate_attack(enemy, player)
+                        self.animation_manager.animate_attack(enemy, player, self.obstacles, self.water_zones, self.bonuses, self.player_units + self.enemy_units)
                         enemy.attack(player)
                         if not player.is_alive:
                             print(f"Un joueur à ({player.x}, {player.y}) a été tué !")
+                            self.animation_manager.animate_death(player, self.obstacles, self.water_zones, self.bonuses, self.player_units + self.enemy_units)
                             self.player_units.remove(player)
                         has_acted = True
 
             if self.check_game_over():
                 return
 
-    def animate_movement(self, unit, dx, dy):
-        """Anime le déplacement de l'unité."""
-        start_x = unit.x * CELL_SIZE
-        start_y = unit.y * CELL_SIZE
-        end_x = (unit.x + dx) * CELL_SIZE
-        end_y = (unit.y + dy) * CELL_SIZE
-        steps = 10
-        for step in range(steps):
-            x = start_x + (end_x - start_x) * step / steps
-            y = start_y + (end_y - start_y) * step / steps
-            self.screen.fill(BLACK)
-            self.draw_grid()
-            self.draw_units()
-            self.screen.blit(unit.image, (x, y))
-            pygame.display.flip()
-            pygame.time.wait(50)
-
-    def animate_attack(self, attacker, defender):
-        """Anime l'attaque de l'unité."""
-        self.screen.fill(BLACK)
-        self.draw_grid()
-        self.draw_units()
-        pygame.draw.line(self.screen, RED,
-                         (attacker.x * CELL_SIZE + CELL_SIZE // 2, attacker.y * CELL_SIZE + CELL_SIZE // 2),
-                         (defender.x * CELL_SIZE + CELL_SIZE // 2, defender.y * CELL_SIZE + CELL_SIZE // 2),
-                         5)
-        pygame.display.flip()
-        pygame.time.wait(200)
-
-    def draw_grid(self):
-        # Affichage des obstacles
-        for x, y in self.obstacles:
-            pygame.draw.rect(self.screen, GRAY, (x * CELL_SIZE, y * CELL_SIZE, CELL_SIZE, CELL_SIZE))
-
-        # Affichage des zones d'eau
-        for x, y in self.water_zones:
-            pygame.draw.rect(self.screen, WATER_BLUE, (x * CELL_SIZE, y * CELL_SIZE, CELL_SIZE, CELL_SIZE))
-
-        # Affichage des bonus
-        for x, y in self.bonuses:
-            pygame.draw.rect(self.screen, GREEN, (x * CELL_SIZE, y * CELL_SIZE, CELL_SIZE, CELL_SIZE))
-
-    def draw_units(self):
-        for unit in self.player_units + self.enemy_units:
-            unit.draw(self.screen)
-
     def flip_display(self):
         self.screen.fill(BLACK)
-        self.draw_grid()
-        self.draw_units()
+        self.animation_manager.draw_grid(self.obstacles, self.water_zones, self.bonuses)
+        self.animation_manager.draw_units(self.player_units + self.enemy_units)
         pygame.display.flip()
 
     def display_game_over(self, winner):
