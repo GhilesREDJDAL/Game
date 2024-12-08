@@ -1,6 +1,8 @@
 import pygame
 import sys
 import random
+import numpy as np
+from abc import ABC
 
 # Définition des couleurs et des dimensions
 GRID_SIZE = 8  # Augmentation de la taille de la grille à 15x15
@@ -19,13 +21,156 @@ RED = (255, 0, 0)
 STONE_IMAGE = pygame.image.load("images/stone.png")
 WATER_IMAGE = pygame.image.load("images/water.png")
 BONUS_IMAGE = pygame.image.load("images/bonus.png")
-FOREST_BACKGROUND_IMAGE = pygame.image.load("images/forest_background2.png")
+FOREST_BACKGROUND_IMAGE = pygame.image.load("images/forest_background.png")
 
 # Redimensionner les images pour correspondre à la taille des cellules
 STONE_IMAGE = pygame.transform.scale(STONE_IMAGE, (CELL_SIZE, CELL_SIZE))
 WATER_IMAGE = pygame.transform.scale(WATER_IMAGE, (CELL_SIZE, CELL_SIZE))
 BONUS_IMAGE = pygame.transform.scale(BONUS_IMAGE, (CELL_SIZE, CELL_SIZE))
 FOREST_BACKGROUND_IMAGE = pygame.transform.scale(FOREST_BACKGROUND_IMAGE, (WIDTH, HEIGHT))
+
+# Classe abstraite mère pour les effets
+class Effect(ABC):
+    def __init__(self, name, duration):
+        self.name = name
+        self.duration = duration
+
+    def apply(self, unit):
+        pass
+
+# Classe pour l'effet de poison
+class Poison(Effect):
+    def __init__(self):
+        super().__init__("Poison", 3)
+
+    def apply(self, unit):
+        unit.health -= 1
+
+# Classe pour l'effet de feu
+class Feu(Effect):
+    def __init__(self):
+        super().__init__("Feu", 2)
+
+    def apply(self, unit):
+        unit.health -= 2
+
+# Classe abstraite mère pour les compétences
+class Competence(ABC):
+    """ Classe abstraite mère pour les compétences
+    ...
+    Attributs
+    ---------
+    nom: str
+        Le nom de la compétence
+    puissance : int
+        La puissance (dégats infligés) de la compétence
+    portee : int
+        La portée de la compétence
+    aoe_radius : int
+        La rayon d'effet de la compétence (si applicable)
+    effet : Effect
+        Effet associé à la compétence (si applicable)
+
+    Méthodes
+    --------
+    use(utilisateur, cible, screen)
+        Utilisation de la compétence et affichage selon les résultats de crit- et dodge_ check.
+    crit_check(utilisateur)
+        Determine si le cout critique a lieu
+    dodge_check(cible)
+        Determine si l'esquive a lieu
+    display_message(screen, text)
+        Affiche un message
+    """
+
+    def __init__(self, nom, puissance, portee, aoe_radius, effet=None):
+        self.nom = nom
+        self.puissance = puissance
+        self.portee = portee
+        self.aoe_radius = aoe_radius  # Area of effect radius
+        self.effet = effet
+
+    def use(self, utilisateur, cible, screen):
+        """ Utilisation de la compétence """
+        if abs(utilisateur.x - cible.x) <= self.portee and abs(utilisateur.y - cible.y) <= self.portee:
+            if self.dodge_check(cible):
+                self.display_message(screen, "L'attaque a été esquivée!")
+                return False
+
+            if self.crit_check(utilisateur):
+                crit_dmg = (utilisateur.attack_power + self.puissance) * 2
+                dmg = max(0, crit_dmg - cible.defense)
+                self.display_message(screen, f"Coup critique! Dégâts infligés: {dmg}")
+            else:
+                dmg = max(0, utilisateur.attack_power - cible.defense)
+                self.display_message(screen, f"Dégâts infligés: {dmg}")
+
+            if cible.health <= dmg:
+                cible.health = 0
+            else:
+                cible.health -= dmg
+
+            if self.effet:
+                cible.effect_status = self.effet
+
+            return True
+
+    def crit_check(self, utilisateur):
+        """ Calcul aléatoire du coup critique, retourne True ou False selon le
+            taux critique de l'unité qui utilise la compétence"""
+        return np.random.choice([True, False], p=[utilisateur.crit, 1-utilisateur.crit])
+
+    def dodge_check(self, cible):
+        """ Calcul aléatoire de l'evasion, retourne True ou False selon le
+            taux d'évasion de la cible """
+        return np.random.choice([True, False], p=[cible.dodge, 1-cible.dodge])
+
+    def display_message(self, screen, text):
+        """ Affichage du message coup critique/evasion. """
+        font = pygame.font.Font(None, 36)
+        text_surface = font.render(text, True, WHITE)
+        screen.blit(text_surface, (10, HEIGHT + 10))
+        pygame.display.flip()
+
+class TirArc(Competence):
+    """ Sous fille TirArc de Compétence """
+    def __init__(self):
+        super().__init__("Tir à l'arc", 15, 10, 1)
+
+class FlecheEmpoisonnee(Competence):
+    def __init__(self):
+        super().__init__("Flèche empoisonnée", 10, 10, 1, Poison())
+
+class BouleDeFeu(Competence):
+    def __init__(self):
+        super().__init__("Boule de feu", 25, 5, 3, Feu())
+
+class CoupDEpee(Competence):
+    def __init__(self):
+        super().__init__("Coup d'épée", 25, 1, 1)
+
+class CoupDeBouclier(Competence):
+    def __init__(self):
+        super().__init__("Coup de bouclier", 10, 1, 1)
+
+    def use(self, utilisateur, cible, screen):
+        """ Surcharge de la méthode d'utilisation de la compétence, adaptée à celle-ci"""
+        success = super().use(utilisateur, cible, screen)
+        if not success:
+            return False
+        # Si l'attaque n'a pas été esquivé:
+        dx = cible.x - utilisateur.x
+        dy = cible.y - utilisateur.y
+        # La cible est déplacée d'une case selon l'orientation de l'utilisateur:
+        if dx > 0 and cible.x < GRID_SIZE - 1:
+            cible.x += 1
+        elif dx < 0 and cible.x > 0:
+            cible.x -= 1
+        if dy > 0 and cible.y < GRID_SIZE - 1:
+            cible.y += 1
+        elif dy < 0 and cible.y > 0:
+            cible.y -= 1
+        return True
 
 # Classe qui gère le déplacement des unités
 class Movement:
@@ -82,7 +227,7 @@ class Movement:
 
 # Classe générique pour représenter une unité
 class Unit:
-    def __init__(self, x, y, health, attack_power, defense, speed, team, unit_type, image_path):
+    def __init__(self, x, y, health, attack_power, defense, speed, team, unit_type, image_path, crit=0.1, dodge=0.1):
         self.x = x
         self.y = y
         self.health = health
@@ -95,6 +240,10 @@ class Unit:
         self.is_alive = True
         self.image = pygame.image.load(image_path)
         self.image = pygame.transform.scale(self.image, (CELL_SIZE, CELL_SIZE))
+        self.crit = crit
+        self.dodge = dodge
+        self.competences = []
+        self.effect_status = None
 
         # Créer un objet de déplacement pour cette unité
         self.movement = Movement(self, set(), set(), set(), set())  # Pas encore d'obstacles, zones d'eau, autres unités ou bonus
@@ -108,6 +257,9 @@ class Unit:
             target.health -= damage
             if target.health <= 0:
                 target.is_alive = False
+
+    def use_competence(self, competence, target, screen):
+        competence.use(self, target, screen)
 
     def draw(self, screen):
         if not self.is_alive:
@@ -142,6 +294,7 @@ class Knight(Unit):
         else:
             image_path = "images/enemy_knight.png"
         super().__init__(x, y, 10, 2, 1, 2, team, "Knight", image_path)  # Vitesse = 2
+        self.competences = [CoupDEpee(), CoupDeBouclier()]
 
 class Archer(Unit):
     def __init__(self, x, y, team):
@@ -150,6 +303,7 @@ class Archer(Unit):
         else:
             image_path = "images/enemy_archer.png"
         super().__init__(x, y, 8, 3, 1, 1, team, "Archer", image_path)  # Vitesse = 1
+        self.competences = [TirArc(), FlecheEmpoisonnee()]
 
 class Mage(Unit):
     def __init__(self, x, y, team):
@@ -158,6 +312,7 @@ class Mage(Unit):
         else:
             image_path = "images/enemy_mage.png"
         super().__init__(x, y, 6, 4, 0, 3, team, "Mage", image_path)  # Vitesse = 3
+        self.competences = [BouleDeFeu()]
 
 # Classe pour gérer les animations
 class AnimationManager:
@@ -246,6 +401,7 @@ class Game:
         self.screen = screen
         self.animation_manager = AnimationManager(screen)
         self.reset_game()  # Initialiser le jeu dès le début
+        self.selected_competence = None
 
     def reset_game(self):
         """Réinitialise le jeu avec de nouvelles unités et obstacles."""
@@ -345,6 +501,24 @@ class Game:
                             has_acted = True
                             selected_unit.is_selected = False
 
+                        # Utiliser une compétence
+                        if event.key in [pygame.K_1, pygame.K_2, pygame.K_3]:
+                            competence_index = event.key - pygame.K_1
+                            if competence_index < len(selected_unit.competences):
+                                self.selected_competence = selected_unit.competences[competence_index]
+                                self.display_competence_selection()
+                                has_acted = True
+                                break
+
+                        # Confirmer l'utilisation de la compétence sélectionnée
+                        if event.key == pygame.K_RETURN and self.selected_competence:
+                            for enemy in list(self.enemy_units):
+                                if abs(selected_unit.x - enemy.x) <= self.selected_competence.portee and abs(selected_unit.y - enemy.y) <= self.selected_competence.portee:
+                                    selected_unit.use_competence(self.selected_competence, enemy, self.screen)
+                                    has_acted = True
+                                    self.selected_competence = None
+                                    break
+
             if self.check_game_over():
                 return
 
@@ -376,8 +550,37 @@ class Game:
                             self.player_units.remove(player)
                         has_acted = True
 
+                # Utiliser une compétence
+                if not has_acted and enemy.competences:
+                    competence = random.choice(enemy.competences)
+                    for player in self.player_units:
+                        if abs(enemy.x - player.x) <= competence.portee and abs(enemy.y - player.y) <= competence.portee:
+                            enemy.use_competence(competence, player, self.screen)
+                            has_acted = True
+                            break
+
             if self.check_game_over():
                 return
+
+    def display_competence_selection(self):
+        self.screen.fill(BLACK)
+        self.animation_manager.draw_background()
+        self.animation_manager.draw_grid(self.obstacles, self.water_zones, self.bonuses)
+        self.animation_manager.draw_units(self.player_units + self.enemy_units)
+
+        font = pygame.font.Font(None, 36)
+        text = font.render(f"Compétence sélectionnée: {self.selected_competence.nom}", True, WHITE)
+        text_rect = text.get_rect(center=(WIDTH // 2, HEIGHT + 50))
+        self.screen.blit(text, text_rect)
+
+        # Afficher les compétences disponibles
+        for index, competence in enumerate(self.selected_unit.competences):
+            competence_text = font.render(f"{index + 1}: {competence.nom}", True, WHITE)
+            competence_rect = competence_text.get_rect(topleft=(10, HEIGHT + 80 + index * 40))
+            self.screen.blit(competence_text, competence_rect)
+
+        pygame.display.flip()
+        pygame.time.wait(1000)
 
     def flip_display(self):
         self.screen.fill(BLACK)
@@ -416,3 +619,4 @@ while True:
     game.handle_player_turn()
     game.handle_enemy_turn()
     clock.tick(FPS)
+1
