@@ -30,7 +30,7 @@ def draw_text(screen, text, position, size=30, color=(255, 255, 255)):
         screen.blit(text_surface, (x, y))
         y += size  # Se déplace vers le bas de la hauteur de la police pour la ligne suivante
 
-def flip_display(screen, player_units, enemy_units, water_zones, obstacles, current_effects):
+def flip_display(screen, player_units, enemy_units, water_zones, obstacles, current_effects, object_list):
     """Affiche le jeu."""
     # Affiche la grille
     #screen.fill(BLACK)
@@ -52,6 +52,10 @@ def flip_display(screen, player_units, enemy_units, water_zones, obstacles, curr
     for x, y in obstacles:
         screen.blit(obstacle_image, (x * CELL_SIZE, y * CELL_SIZE))
 
+    # Affiche les objets
+    for obj in object_list:
+        obj.draw(screen)
+        
     # Affiche les effets à l'écran
     draw_effects(screen, current_effects)
 

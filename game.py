@@ -5,6 +5,7 @@ import numpy as np
 from unit import *
 from Constantes import GRID_SIZE, CELL_SIZE, WIDTH, HEIGHT, BLACK, WHITE, GRAY, WATER_BLUE, MARGIN_BOTTOM
 from utils import draw_text, flip_display, draw_effects
+from Objets import *
 
 GAME_CONTINUE = True
 
@@ -115,7 +116,19 @@ class Game:
         self.player_units = self.team1_units + self.team2_units 
         #On redefinit la liste d'effets à une liste vide (pour ne plus avoir les effets de la partie précedente):
         self.current_effects = []
-        
+        self.rand_obj_coords = []
+        self.current_objects = []
+        while len(self.rand_obj_coords) < 5:
+            x = np.random.randint(0, GRID_SIZE)
+            y = np.random.randint(0, GRID_SIZE)
+            if ((x, y) not in [(unit.x, unit.y) for unit in (self.player_units + self.enemy_units)] and
+                (x, y) not in self.water_zones and
+                (x, y) not in self.obstacles and
+                (x, y) not in [(obj.x, obj.y) for obj in self.current_objects]):
+                self.rand_obj_coords.append((x, y))
+        self.current_objects = [np.random.choice([PotionVie, AnneauCritique, AnneauEsquive, AnneauVitesse])(x, y) for x, y in self.rand_obj_coords]
+        print(self.current_objects[0].x,self.current_objects[1].x,self.current_objects[2].x,self.current_objects[3].x )
+        print(self.current_objects[0].y,self.current_objects[1].y,self.current_objects[2].y,self.current_objects[3].y)
     def selectionner_unites(self, team):
         """Permet à un joueur de sélectionner 3 unités."""
         units = []
@@ -163,7 +176,7 @@ class Game:
             selected_unit.is_selected = True #Et l'indicateur de séléction à True
             mvmt_cpt = selected_unit.speed #Pour gérer les déplacements des unités selon leur vitesse.
             friend_loop_check = False #Indicateur de mauvaise séléction de cible (alliée), utile dans la gestion de ce cas.
-            flip_display(self.screen, self.player_units, self.enemy_units, self.water_zones, self.obstacles, self.current_effects)
+            flip_display(self.screen, self.player_units, self.enemy_units, self.water_zones, self.obstacles, self.current_effects, self.current_objects)
             while not has_acted:
                 if friend_loop_check:
                     friend_loop_check = False #on remet cet indicateur à False pour que l'unité puisse essayer d'agir à nouveau
@@ -197,12 +210,23 @@ class Game:
                             #Elle se déplace et le compteur est décremnté de 1:
                             if selected_unit.move(dx, dy, self.obstacles, self.water_zones, self.player_units + self.enemy_units, self.screen):
                                 mvmt_cpt -= 1  # Reduce the movement counter
-                            flip_display(self.screen, self.player_units, self.enemy_units, self.water_zones, self.obstacles, self.current_effects)
+                                for obj in self.current_objects:
+                                    if (selected_unit.x, selected_unit.y) == (obj.x, obj.y):
+                                        obj.is_owned = True
+                                        obj.owner = selected_unit
+                                        selected_unit.item = obj
+                                        self.current_objects.remove(obj)
+                                        flip_display(self.screen, self.player_units, self.enemy_units, self.water_zones, self.obstacles, self.current_effects, self.current_objects)
+                                        draw_text(self.screen, f"Vous avez trouvé un objet à ({obj.x}, {obj.y})!", (10, HEIGHT + 10))
+                                        pygame.display.flip()
+                                        pygame.time.wait(300) 
+                                        break
+                            flip_display(self.screen, self.player_units, self.enemy_units, self.water_zones, self.obstacles, self.current_effects, self.current_objects)
                         #Si elle ne peut plus se déplacer:
                         elif mvmt_cpt < 0:
                             #On affiche un message:
                             if (event.key != pygame.K_s) and (event.key != pygame.K_ESCAPE):
-                                flip_display(self.screen, self.player_units, self.enemy_units, self.water_zones, self.obstacles, self.current_effects)
+                                flip_display(self.screen, self.player_units, self.enemy_units, self.water_zones, self.obstacles, self.current_effects, self.current_objects)
                                 draw_text(self.screen, "Vous ne pouvez plus vous déplacer.", (10, HEIGHT + 10))
                                 pygame.display.flip()
                                 pygame.time.wait(500)
@@ -211,7 +235,7 @@ class Game:
                                 #Si c'est le cas, l'unité est enlevée d ela liste de l'équipe.
                                 has_acted = True
                                 selected_unit.is_selected = False #On remet l'indicateur de sélection à False
-                            flip_display(self.screen, self.player_units, self.enemy_units, self.water_zones, self.obstacles, self.current_effects)
+                            flip_display(self.screen, self.player_units, self.enemy_units, self.water_zones, self.obstacles, self.current_effects, self.current_objects)
                         #L'utilisateur peut choisir d'utiliser l'attaque basique et de terminer son tour:
                         if event.key == pygame.K_SPACE:
                             for enemy in self.enemy_units:
@@ -222,11 +246,13 @@ class Game:
                             selected_unit.is_selected = False #Celui de séléction à False
                         #Si l'utilisateur choisi d'utiliser une compétence d'unité:
                         elif event.key == pygame.K_s:
-                            flip_display(self.screen, self.player_units, self.enemy_units, self.water_zones, self.obstacles, self.current_effects)
+                            flip_display(self.screen, self.player_units, self.enemy_units, self.water_zones, self.obstacles, self.current_effects, self.current_objects)
                             #Un menu contenant les compétences disponibles est afiché:
                             draw_text(self.screen, "Compétences disponibles :", (10, HEIGHT + 10))
                             for i, skill in enumerate(selected_unit.skills):
                                 draw_text(self.screen, f"{i + 1}. {skill.nom}", (10, HEIGHT + 50 + i * 30))
+                            if selected_unit.item is not None:
+                                draw_text(self.screen, f"{i + 2}. Utiliser {selected_unit.item.nom}", (10, HEIGHT + 50 + (i+1) * 30))
                             pygame.display.flip()
                             skill_selected = False
                             #L'utilisateur peut alors choisir quelle compétence utiliser.
@@ -241,7 +267,7 @@ class Game:
                                     if event.type == pygame.KEYDOWN:
                                         if event.key == pygame.K_ESCAPE:
                                             skill_selected = True
-                                            flip_display(self.screen, self.player_units, self.enemy_units, self.water_zones, self.obstacles, self.current_effects)
+                                            flip_display(self.screen, self.player_units, self.enemy_units, self.water_zones, self.obstacles, self.current_effects, self.current_objects)
                                             draw_text(self.screen, "", (10, HEIGHT + 10))
                                             pygame.display.flip()
                                             pygame.time.wait(5)
@@ -254,7 +280,7 @@ class Game:
                                                 chosen_skill = selected_unit.skills[skill_index]
                                                 skill_selected = True #L'indicateur est placé a True
                                                 #L'utilisateur doit maintenant choisir une cible:
-                                                flip_display(self.screen, self.player_units, self.enemy_units, self.water_zones, self.obstacles, self.current_effects)
+                                                flip_display(self.screen, self.player_units, self.enemy_units, self.water_zones, self.obstacles, self.current_effects, self.current_objects)
                                                 draw_text(self.screen, "Cliquez sur un ennemi pour choisir une cible.", (10, HEIGHT + 10))
                                                 pygame.display.flip()
 
@@ -271,7 +297,7 @@ class Game:
                                                             if event.key == pygame.K_ESCAPE:
                                                                 skill_selected = True
                                                                 cible_choisie = True
-                                                                flip_display(self.screen, self.player_units, self.enemy_units, self.water_zones, self.obstacles, self.current_effects)
+                                                                flip_display(self.screen, self.player_units, self.enemy_units, self.water_zones, self.obstacles, self.current_effects, self.current_objects)
                                                                 draw_text(self.screen, "", (10, HEIGHT + 10))
                                                                 pygame.display.flip()
                                                                 pygame.time.wait(5)
@@ -284,7 +310,7 @@ class Game:
                                                             #Si la cible est une unité alliée:
                                                             for friendly in turn_units:
                                                                 if friendly.x == grid_x and friendly.y == grid_y:
-                                                                    flip_display(self.screen, self.player_units, self.enemy_units, self.water_zones, self.obstacles, self.current_effects)
+                                                                    flip_display(self.screen, self.player_units, self.enemy_units, self.water_zones, self.obstacles, self.current_effects, self.current_objects)
                                                                     draw_text(self.screen, "Vous ne pouvez pas attaquer votre propre unité!", (10, HEIGHT + 10))
                                                                     pygame.display.flip()
                                                                     pygame.time.wait(300)
@@ -294,7 +320,7 @@ class Game:
                                                             for unit in self.player_units:
                                                                 #Et si elle n'est pas dans l'équipe:
                                                                 if unit not in turn_units and unit.x == grid_x and unit.y == grid_y:
-                                                                    flip_display(self.screen, self.player_units, self.enemy_units, self.water_zones, self.obstacles, self.current_effects)
+                                                                    flip_display(self.screen, self.player_units, self.enemy_units, self.water_zones, self.obstacles, self.current_effects, self.current_objects)
                                                                     #La compétence est utilisée:
                                                                     if selected_unit.use_skill(unit, chosen_skill, self.screen):
                                                                         has_acted = True
@@ -309,7 +335,7 @@ class Game:
                                                             #S la cible est une unité ennemie (PvE):
                                                             for enemy in self.enemy_units:
                                                                 if enemy.x == grid_x and enemy.y == grid_y:
-                                                                    flip_display(self.screen, self.player_units, self.enemy_units, self.water_zones, self.obstacles, self.current_effects)
+                                                                    flip_display(self.screen, self.player_units, self.enemy_units, self.water_zones, self.obstacles, self.current_effects, self.current_objects)
                                                                     #La compétence est utilisée:
                                                                     if selected_unit.use_skill(unit, chosen_skill, self.screen):
                                                                         has_acted = True
@@ -320,12 +346,22 @@ class Game:
                                                                     cible_choisie = True
                                                                     has_acted = True 
                                                                     selected_unit.is_selected = False #L'unité est déselectionnée
-                                                                    break       
+                                                                    break  
+                                            elif skill_index == len(selected_unit.skills):
+                                                if selected_unit.item is not None:
+                                                    selected_unit.item.use_object() # L'objet est utilisé
+                                                    selected_unit.item = None # Et retirer de "l'inventaire" de l'unité
+                                                    skill_selected = True
+                                                    has_acted = True
+                                                    cible_choisie = True
+                                                    selected_unit.is_selected = False #L'unité est déselectionnée
+                                                    flip_display(self.screen, self.player_units, self.enemy_units, self.water_zones, self.obstacles, self.current_effects, self.current_objects)
+                                                    break
                         #L'utilisateur peut choisir d'afficher plus d'informations à propos d'une unité (en cliquant dessus):
                         elif event.key == pygame.K_i:
                             self.disp_info()
         self.check_death()
-        flip_display(self.screen, self.player_units, self.enemy_units, self.water_zones, self.obstacles, self.current_effects)
+        flip_display(self.screen, self.player_units, self.enemy_units, self.water_zones, self.obstacles, self.current_effects, self.current_objects)
         
         
     def check_death(self):
@@ -343,7 +379,7 @@ class Game:
                          
     def disp_info(self):
         """"Affichage d'information d'une unité"""
-        flip_display(self.screen, self.player_units, self.enemy_units, self.water_zones, self.obstacles, self.current_effects)
+        flip_display(self.screen, self.player_units, self.enemy_units, self.water_zones, self.obstacles, self.current_effects, self.current_objects)
         #Le message indiquant que l'utilisateur doit sélectionner une unité est affiché:
         draw_text(self.screen, "Cliquez sur une cible pour obtenir des informations", (10, HEIGHT + 10))
         pygame.display.flip()
@@ -361,17 +397,21 @@ class Game:
                     #Si ces coordonnées correspondent à une unité:
                     for target in (self.enemy_units + self.player_units):
                         if target.x == grid_x and target.y == grid_y:            
-                            flip_display(self.screen, self.player_units, self.enemy_units, self.water_zones, self.obstacles, self.current_effects)
+                            flip_display(self.screen, self.player_units, self.enemy_units, self.water_zones, self.obstacles, self.current_effects, self.current_objects)
                             #L'information est affichée:
                             info_text = (
                                 f"L'unité choisie a {target.health} points de vie.\n"
                                 f"Points d'attaque : {target.attack_power}\n"
                                 f"Défense : {target.defense_power}\n"
-                                f"Vitesse : {target.speed}"
+                                f"Vitesse : {target.speed}\n"
+                                f"Taux Critique : {target.crit}\n"
+                                f"Taux d'évasion : {target.dodge}"
                             )
                             draw_text(self.screen, info_text, (10, HEIGHT + 10))  # Adjusting starting position
                             pygame.display.flip()
+                            pygame.time.wait(1000)
                             cible_choisie = True
+        flip_display(self.screen, self.player_units, self.enemy_units, self.water_zones, self.obstacles, self.current_effects, self.current_objects)
 
     def handle_enemy_turn(self):
         """IA très simple pour les ennemis."""
@@ -384,7 +424,7 @@ class Game:
                 target = random.choice(self.player_units)
                 dx = 1 if enemy.x < target.x else -1 if enemy.x > target.x else 0
                 dy = 1 if enemy.y < target.y else -1 if enemy.y > target.y else 0
-                enemy.move(dx, dy, self.obstacles, self.water_zones, self.screen)
+                enemy.move(dx, dy, self.obstacles, self.water_zones, self.current_objects,self.screen)
 
                 # Attaque si possible
                 if abs(enemy.x - target.x) <= 1 and abs(enemy.y - target.y) <= 1:
@@ -453,7 +493,7 @@ class Game:
                 if unit.x == x and unit.y == y:
                     new_effect.apply_effect(unit)
         self.check_death()
-        flip_display(self.screen, self.player_units, self.enemy_units, self.water_zones, self.obstacles, self.current_effects)
+        flip_display(self.screen, self.player_units, self.enemy_units, self.water_zones, self.obstacles, self.current_effects, self.current_objects)
         
 
     def update_effects(self):
@@ -470,7 +510,7 @@ class Game:
         #Si la durée de vie de l'effet a expiré, l'effet est enlevé de la liste:
         self.current_effects = [((x, y), effect) for (x, y), effect in self.current_effects if effect.effectTTL > 0]
         self.check_death()
-        flip_display(self.screen, self.player_units, self.enemy_units, self.water_zones, self.obstacles, self.current_effects)
+        flip_display(self.screen, self.player_units, self.enemy_units, self.water_zones, self.obstacles, self.current_effects, self.current_objects)
         
     def handle_turns(self):
         """Gestion des tours selon le mode de jeu """
@@ -510,7 +550,7 @@ def main():
             game.handle_turns()
             #Et les effets:
             game.update_effects()
-            flip_display(screen, game.player_units, game.enemy_units, game.water_zones, game.obstacles, game.current_effects)
+            flip_display(screen, game.player_units, game.enemy_units, game.water_zones, game.obstacles, game.current_effects, game.current_objects)
 
 if __name__ == "__main__":
     main()

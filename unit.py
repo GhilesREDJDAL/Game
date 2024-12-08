@@ -4,7 +4,7 @@ from abc import ABC, abstractmethod
 from Competences import *
 from Constantes import CELL_SIZE, RED, BLUE, GREEN, GRID_SIZE
 
-# On charge les images utilisées pour l'environnement (herbe, eau et obstacles)
+# On charge les images utilisées pour les unités
 player_archer = pygame.image.load('images/player_archer.png')
 player_knight = pygame.image.load('images/player_knight.png')
 player_mage = pygame.image.load('images/player_mage.png')
@@ -78,7 +78,8 @@ class Unit(ABC):
         self.dodge = dodge
         self.team = team  # 'player' ou 'enemy'
         self.is_selected = False
-        self.effect_status = None
+        self.effect_status = None #Deprec?
+        self.item = None
 
     def move(self, dx, dy, obstacles, water_zones, units_list, screen):
         """Déplace l'unité de dx, dy en vérifiant les obstacles et les zones d'eau."""
@@ -101,29 +102,11 @@ class Unit(ABC):
         """Attaque une unité cible."""
         if abs(self.x - target.x) <= 1 and abs(self.y - target.y) <= 1:
             target.health = max(0, target.health - (target.defense_power - self.attack_power))
-
+            
+    @abstractmethod
     def draw(self, screen):
         """Affiche l'unité sur l'écran."""        
-        if self.is_selected:
-            pygame.draw.rect(screen, GREEN, (self.x * CELL_SIZE,
-                             self.y * CELL_SIZE, CELL_SIZE, CELL_SIZE))
-            
-        if self.team == 'Joueur' or self.team == 'Equipe 1': 
-            if isinstance(self, Archer):
-                screen.blit(player_archer, (self.x * CELL_SIZE + (CELL_SIZE * 0.05), self.y * CELL_SIZE + (CELL_SIZE * 0.05)))
-            elif isinstance(self, Guerrier):
-                screen.blit(player_knight, (self.x * CELL_SIZE + (CELL_SIZE * 0.05), self.y * CELL_SIZE + (CELL_SIZE * 0.05)))
-            elif isinstance(self, Sorcier):
-                screen.blit(player_mage, (self.x * CELL_SIZE + (CELL_SIZE * 0.05), self.y * CELL_SIZE + (CELL_SIZE * 0.05)))
-        else:
-            if isinstance(self, Archer):
-                screen.blit(enemy_archer, (self.x * CELL_SIZE + (CELL_SIZE * 0.05), self.y * CELL_SIZE + (CELL_SIZE * 0.05)))
-            elif isinstance(self, Guerrier):
-                screen.blit(enemy_knight, (self.x * CELL_SIZE + (CELL_SIZE * 0.05), self.y * CELL_SIZE + (CELL_SIZE * 0.05)))
-            elif isinstance(self, Sorcier):
-                screen.blit(enemy_mage, (self.x * CELL_SIZE + (CELL_SIZE * 0.05), self.y * CELL_SIZE + (CELL_SIZE * 0.05)))
-                
-        self.draw_health_bar(screen)
+        pass
 
 
     def draw_health_bar(self, screen):
@@ -221,6 +204,19 @@ class Archer(Unit):
         self.type = "Ranged"
         self.skills = [TirArc(), FlecheEmpoisonnee()]
 
+    def draw(self, screen):
+        if self.is_selected:
+            pygame.draw.rect(screen, GREEN, (self.x * CELL_SIZE,
+                             self.y * CELL_SIZE, CELL_SIZE, CELL_SIZE))
+            
+        if self.team == 'Joueur' or self.team == 'Equipe 1': 
+            screen.blit(player_archer, (self.x * CELL_SIZE + (CELL_SIZE * 0.05),
+                                        self.y * CELL_SIZE + (CELL_SIZE * 0.05)))
+        else:
+            screen.blit(enemy_archer, (self.x * CELL_SIZE + (CELL_SIZE * 0.05),
+                                       self.y * CELL_SIZE + (CELL_SIZE * 0.05)))
+        self.draw_health_bar(screen)
+        
 class Sorcier(Unit):
     """
     Classe représentant un sorcier.
@@ -261,7 +257,19 @@ class Sorcier(Unit):
         super().__init__(x, y, 75, 100, 75, 3, 0.1, 0.1, team)
         self.type = "Ranged"
         self.skills = [BouleDeFeu()]  # Gele() à ajouter plus tard
-
+    
+    def draw(self, screen):
+        if self.is_selected:
+            pygame.draw.rect(screen, GREEN, (self.x * CELL_SIZE,
+                             self.y * CELL_SIZE, CELL_SIZE, CELL_SIZE))
+        if self.team == 'Joueur' or self.team == 'Equipe 1': 
+            screen.blit(player_mage, (self.x * CELL_SIZE + (CELL_SIZE * 0.05),
+                                        self.y * CELL_SIZE + (CELL_SIZE * 0.05)))
+        else:
+            screen.blit(enemy_mage, (self.x * CELL_SIZE + (CELL_SIZE * 0.05),
+                                       self.y * CELL_SIZE + (CELL_SIZE * 0.05)))
+        self.draw_health_bar(screen)
+        
 class Guerrier(Unit):
     """
     Classe représentant un guerrier.
@@ -302,3 +310,15 @@ class Guerrier(Unit):
         super().__init__(x, y, 150, 100, 100, 3, 0.1, 0.1, team)
         self.type = "Physical"
         self.skills = [CoupDEpee(), CoupDeBouclier()]
+    
+    def draw(self, screen):
+        if self.is_selected:
+            pygame.draw.rect(screen, GREEN, (self.x * CELL_SIZE,
+                             self.y * CELL_SIZE, CELL_SIZE, CELL_SIZE))
+        if self.team == 'Joueur' or self.team == 'Equipe 1': 
+            screen.blit(player_knight, (self.x * CELL_SIZE + (CELL_SIZE * 0.05),
+                                        self.y * CELL_SIZE + (CELL_SIZE * 0.05)))
+        else:
+            screen.blit(enemy_knight, (self.x * CELL_SIZE + (CELL_SIZE * 0.05),
+                                       self.y * CELL_SIZE + (CELL_SIZE * 0.05)))
+        self.draw_health_bar(screen)
