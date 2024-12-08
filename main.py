@@ -1,7 +1,6 @@
 import pygame
-import sys
-from game import Game
 from constants import WIDTH, HEIGHT, FPS
+from game import Game
 
 # Initialisation de Pygame
 pygame.init()
@@ -17,4 +16,4 @@ while True:
     game.handle_player_turn()
     game.handle_enemy_turn()
     clock.tick(FPS)
-  
+
