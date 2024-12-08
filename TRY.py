@@ -12,14 +12,16 @@ WHITE = (255, 255, 255)
 BLACK = (0, 0, 0)
 WATER_BLUE = (0, 191, 255)
 GRAY = (128, 128, 128)
+GREEN = (0, 255, 0)
 
 # Classe qui gère le déplacement des unités
 class Movement:
-    def __init__(self, unit, obstacles, water_zones, units):
+    def __init__(self, unit, obstacles, water_zones, units, bonuses):
         self.unit = unit
         self.obstacles = obstacles
         self.water_zones = water_zones
         self.units = units
+        self.bonuses = bonuses
 
     def move(self, dx, dy):
         """Déplace l'unité selon sa vitesse."""
@@ -53,6 +55,13 @@ class Movement:
                         self.unit.health = 0
                         self.unit.is_alive = False
                         return True
+
+                    # Vérifie si l'unité passe par une case bonus
+                    if (self.unit.x, self.unit.y) in self.bonuses:
+                        print(f"L'unité de l'équipe {self.unit.team} a trouvé un bonus à ({self.unit.x}, {self.unit.y}) et a gagné de la vie !")
+                        self.unit.health += 2  # Augmente la vie de l'unité
+                        self.bonuses.remove((self.unit.x, self.unit.y))  # Retire le bonus de la liste
+
                 else:
                     return False  # Si une case est bloquée, l'unité ne se déplace pas
 
@@ -75,7 +84,7 @@ class Unit:
         self.image = pygame.transform.scale(self.image, (CELL_SIZE, CELL_SIZE))
 
         # Créer un objet de déplacement pour cette unité
-        self.movement = Movement(self, set(), set(), set())  # Pas encore d'obstacles, zones d'eau ou autres unités
+        self.movement = Movement(self, set(), set(), set(), set())  # Pas encore d'obstacles, zones d'eau, autres unités ou bonus
 
     def attack(self, target):
         if not self.is_alive:
@@ -158,16 +167,28 @@ class Game:
         ]
         self.obstacles = {(3, 3),(3,4),(4,3),(5,4),(6,6), (4, 4), (5, 5)}
         self.water_zones = {(2, 2), (6, 2)}
+        self.bonuses = self.place_bonuses()
 
-        # Lier les obstacles, zones d'eau et unités au mouvement
+        # Lier les obstacles, zones d'eau, unités et bonus au mouvement
         self.link_movement()
 
+    def place_bonuses(self):
+        """Place les bonus de manière aléatoire sur la grille."""
+        bonuses = set()
+        while len(bonuses) < 5:  # Place 5 bonus sur la grille
+            x = random.randint(0, GRID_SIZE - 1)
+            y = random.randint(0, GRID_SIZE - 1)
+            if (x, y) not in self.obstacles and (x, y) not in self.water_zones:
+                bonuses.add((x, y))
+        return bonuses
+
     def link_movement(self):
-        # Associer obstacles, zones d'eau et unités aux objets de déplacement
+        # Associer obstacles, zones d'eau, unités et bonus aux objets de déplacement
         for unit in self.player_units + self.enemy_units:
             unit.movement.obstacles = self.obstacles
             unit.movement.water_zones = self.water_zones
             unit.movement.units = self.player_units + self.enemy_units
+            unit.movement.bonuses = self.bonuses
 
     def check_game_over(self):
         """Vérifie si une équipe a perdu toutes ses unités."""
@@ -267,6 +288,10 @@ class Game:
         # Affichage des zones d'eau
         for x, y in self.water_zones:
             pygame.draw.rect(self.screen, WATER_BLUE, (x * CELL_SIZE, y * CELL_SIZE, CELL_SIZE, CELL_SIZE))
+
+        # Affichage des bonus
+        for x, y in self.bonuses:
+            pygame.draw.rect(self.screen, GREEN, (x * CELL_SIZE, y * CELL_SIZE, CELL_SIZE, CELL_SIZE))
 
         for unit in self.player_units + self.enemy_units:
             unit.draw(self.screen)
