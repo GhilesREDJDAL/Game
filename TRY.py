@@ -30,6 +30,10 @@ class Movement:
             new_x = self.unit.x + dx
             new_y = self.unit.y + dy
 
+            # Vérifie si la nouvelle position est occupée par une autre unité
+            if any(u.x == new_x and u.y == new_y and u.is_alive for u in self.units if u != self.unit):
+                return False  # Si la position est occupée, l'unité ne se déplace pas
+
             # Si l'unité est un Mage, ignore les obstacles
             if isinstance(self.unit, Mage):
                 if 0 <= new_x < GRID_SIZE and 0 <= new_y < GRID_SIZE:
@@ -117,7 +121,6 @@ class Knight(Unit):
             image_path = "images/enemy_knight.png"
         super().__init__(x, y, 10, 2, 1, 2, team, "Knight", image_path)  # Vitesse = 2
 
-
 class Archer(Unit):
     def __init__(self, x, y, team):
         if team == 'player':
@@ -126,7 +129,6 @@ class Archer(Unit):
             image_path = "images/enemy_archer.png"
         super().__init__(x, y, 8, 3, 1, 1, team, "Archer", image_path)  # Vitesse = 1
 
-
 class Mage(Unit):
     def __init__(self, x, y, team):
         if team == 'player':
@@ -134,7 +136,6 @@ class Mage(Unit):
         else:
             image_path = "images/enemy_mage.png"
         super().__init__(x, y, 6, 4, 0, 3, team, "Mage", image_path)  # Vitesse = 3
-
 
 # Classe principale du jeu
 class Game:
@@ -157,13 +158,6 @@ class Game:
         ]
         self.obstacles = {(3, 3),(3,4),(4,3),(5,4),(6,6), (4, 4), (5, 5)}
         self.water_zones = {(2, 2), (6, 2)}
-
-        
-
-
-    
-
-       
 
         # Lier les obstacles, zones d'eau et unités au mouvement
         self.link_movement()
