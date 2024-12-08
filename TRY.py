@@ -13,6 +13,7 @@ BLACK = (0, 0, 0)
 WATER_BLUE = (0, 191, 255)
 GRAY = (128, 128, 128)
 GREEN = (0, 255, 0)
+RED = (255, 0, 0)
 
 # Classe qui gère le déplacement des unités
 class Movement:
@@ -231,6 +232,7 @@ class Game:
 
                         # L'unité se déplace selon sa vitesse
                         if selected_unit.movement.move(dx, dy):
+                            self.animate_movement(selected_unit, dx, dy)
                             has_acted = True
                             break
 
@@ -239,6 +241,7 @@ class Game:
                         if event.key == pygame.K_SPACE:
                             for enemy in list(self.enemy_units):
                                 if abs(selected_unit.x - enemy.x) <= 1 and abs(selected_unit.y - enemy.y) <= 1:
+                                    self.animate_attack(selected_unit, enemy)
                                     selected_unit.attack(enemy)
                                     if not enemy.is_alive:
                                         print(f"Un ennemi à ({enemy.x}, {enemy.y}) a été tué !")
@@ -264,11 +267,13 @@ class Game:
                 # Déplacement et attaque de l'ennemi
                 direction = random.choice([(1, 0), (-1, 0), (0, 1), (0, -1)])
                 if enemy.movement.move(*direction):
+                    self.animate_movement(enemy, *direction)
                     has_acted = True
 
                 # Attaquer une unité si à portée
                 for player in self.player_units:
                     if abs(enemy.x - player.x) <= 1 and abs(enemy.y - player.y) <= 1:
+                        self.animate_attack(enemy, player)
                         enemy.attack(player)
                         if not player.is_alive:
                             print(f"Un joueur à ({player.x}, {player.y}) a été tué !")
@@ -278,9 +283,36 @@ class Game:
             if self.check_game_over():
                 return
 
-    def flip_display(self):
-        self.screen.fill(BLACK)
+    def animate_movement(self, unit, dx, dy):
+        """Anime le déplacement de l'unité."""
+        start_x = unit.x * CELL_SIZE
+        start_y = unit.y * CELL_SIZE
+        end_x = (unit.x + dx) * CELL_SIZE
+        end_y = (unit.y + dy) * CELL_SIZE
+        steps = 10
+        for step in range(steps):
+            x = start_x + (end_x - start_x) * step / steps
+            y = start_y + (end_y - start_y) * step / steps
+            self.screen.fill(BLACK)
+            self.draw_grid()
+            self.draw_units()
+            self.screen.blit(unit.image, (x, y))
+            pygame.display.flip()
+            pygame.time.wait(50)
 
+    def animate_attack(self, attacker, defender):
+        """Anime l'attaque de l'unité."""
+        self.screen.fill(BLACK)
+        self.draw_grid()
+        self.draw_units()
+        pygame.draw.line(self.screen, RED,
+                         (attacker.x * CELL_SIZE + CELL_SIZE // 2, attacker.y * CELL_SIZE + CELL_SIZE // 2),
+                         (defender.x * CELL_SIZE + CELL_SIZE // 2, defender.y * CELL_SIZE + CELL_SIZE // 2),
+                         5)
+        pygame.display.flip()
+        pygame.time.wait(200)
+
+    def draw_grid(self):
         # Affichage des obstacles
         for x, y in self.obstacles:
             pygame.draw.rect(self.screen, GRAY, (x * CELL_SIZE, y * CELL_SIZE, CELL_SIZE, CELL_SIZE))
@@ -293,9 +325,14 @@ class Game:
         for x, y in self.bonuses:
             pygame.draw.rect(self.screen, GREEN, (x * CELL_SIZE, y * CELL_SIZE, CELL_SIZE, CELL_SIZE))
 
+    def draw_units(self):
         for unit in self.player_units + self.enemy_units:
             unit.draw(self.screen)
 
+    def flip_display(self):
+        self.screen.fill(BLACK)
+        self.draw_grid()
+        self.draw_units()
         pygame.display.flip()
 
     def display_game_over(self, winner):
