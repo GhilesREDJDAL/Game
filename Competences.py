@@ -48,10 +48,11 @@ class Competence(ABC):
                 return False
 
             if self.crit_check(utilisateur):
-                dmg = (utilisateur.attack_power + self.puissance) * 2
+                crit_dmg = (utilisateur.attack_power + self.puissance) * 2
+                dmg = max(0, crit_dmg - cible.defense_power)
                 self.display_message(screen, f"Coup critique! Dégâts infligés: {dmg}")
             else:
-                dmg = utilisateur.attack_power + self.puissance
+                dmg = max(0, utilisateur.attack_power - cible.defense_power)
                 self.display_message(screen, f"Dégâts infligés: {dmg}")
 
             if cible.health <= dmg:
