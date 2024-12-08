@@ -175,32 +175,39 @@ class Game:
                         pygame.quit()
                         exit()
                     #L'utilisateur peut choisir de déplacer son unité en 4-connexité:
+                    move_key = False
+                    draw_text(self.screen, "Realisez une action!", (10, HEIGHT + 10))
+                    pygame.display.flip()
                     if event.type == pygame.KEYDOWN:
                         dx, dy = 0, 0
                         if event.key == pygame.K_LEFT:
                             dx = -1
+                            move_key = True
                         elif event.key == pygame.K_RIGHT:
                             dx = 1
+                            move_key = True
                         elif event.key == pygame.K_UP:
                             dy = -1
+                            move_key = True
                         elif event.key == pygame.K_DOWN:
                             dy = 1
+                            move_key = True
                         #Si l'unité peut encore de déplacer:
-                        if mvmt_cpt >= 0:
+                        if mvmt_cpt >= 0 and move_key == True:
                             #Elle se déplace et le compteur est décremnté de 1:
                             selected_unit.move(dx, dy, self.obstacles, self.water_zones, self.screen)
                             mvmt_cpt -= 1  # Reduce the movement counter
                             flip_display(self.screen, self.player_units, self.enemy_units, self.water_zones, self.obstacles, self.current_effects)
                         #Si elle ne peut plus se déplacer:
-                        if mvmt_cpt < 0:
+                        elif mvmt_cpt < 0:
                             #On affiche un message:
-                            draw_text(self.screen, "Vous ne pouvez plus vous déplacer.", (10, HEIGHT + 10))
-                            pygame.display.flip()
-                            pygame.time.wait(1000)
+                            if (event.key != pygame.K_s) and (event.key != pygame.K_ESCAPE):
+                                draw_text(self.screen, "Vous ne pouvez plus vous déplacer.", (10, HEIGHT + 10))
+                                pygame.display.flip()
+                                pygame.time.wait(500)
                             #On verifie que l'unité soit encore en vie (cas où l'unité serait tombée à l'eau)
                             if selected_unit in turn_units and selected_unit.health <= 0:
                                 #Si c'est le cas, l'unité est enlevée d ela liste de l'équipe.
-                                turn_units.remove(selected_unit)
                                 has_acted = True
                                 selected_unit.is_selected = False #On remet l'indicateur de sélection à False
                             flip_display(self.screen, self.player_units, self.enemy_units, self.water_zones, self.obstacles, self.current_effects)
@@ -210,8 +217,6 @@ class Game:
                                 #Si lun ennemi est à portée, l'unité attaque:
                                 if abs(selected_unit.x - enemy.x) <= 1 and abs(selected_unit.y - enemy.y) <= 1:
                                     selected_unit.attack(enemy)
-                                    if enemy.health <= 0:
-                                        self.enemy_units.remove(enemy)
                             has_acted = True #L'indicateur d'action est placé à True
                             selected_unit.is_selected = False #Celui de séléction à False
                         #Si l'utilisateur choisi d'utiliser une compétence d'unité:
@@ -233,6 +238,13 @@ class Game:
                                         pygame.quit()
                                         exit()
                                     if event.type == pygame.KEYDOWN:
+                                        if event.key == pygame.K_ESCAPE:
+                                            skill_selected = True
+                                            flip_display(self.screen, self.player_units, self.enemy_units, self.water_zones, self.obstacles, self.current_effects)
+                                            draw_text(self.screen, "", (10, HEIGHT + 10))
+                                            pygame.display.flip()
+                                            pygame.time.wait(5)
+                                            break
                                         #On prévoit 9 compétences maximums, en réalité seulement 2 sont actuellement disponnibles par type d'unité:
                                         if pygame.K_1 <= event.key <= pygame.K_9:
                                             skill_index = event.key - pygame.K_1
@@ -254,6 +266,15 @@ class Game:
                                                         if event.type == pygame.QUIT:
                                                             pygame.quit()
                                                             exit()
+                                                        if event.type == pygame.KEYDOWN:    
+                                                            if event.key == pygame.K_ESCAPE:
+                                                                skill_selected = True
+                                                                cible_choisie = True
+                                                                flip_display(self.screen, self.player_units, self.enemy_units, self.water_zones, self.obstacles, self.current_effects)
+                                                                draw_text(self.screen, "", (10, HEIGHT + 10))
+                                                                pygame.display.flip()
+                                                                pygame.time.wait(5)
+                                                                break
                                                         #L'utilisateur doit cliquer sur sa cible, les coordonnées sont alors récupérées:
                                                         if event.type == pygame.MOUSEBUTTONDOWN:
                                                             mx, my = pygame.mouse.get_pos()
@@ -277,13 +298,6 @@ class Game:
                                                                     if selected_unit.use_skill(unit, chosen_skill, self.screen):
                                                                         has_acted = True
                                                                     pygame.time.wait(300)
-                                                                    #Si la cible n'a plus de vie, elle est retirée des listes d'unités
-                                                                    if unit.health <= 0:
-                                                                        if unit.team == "Equipe 1":
-                                                                            self.team1_units.remove(unit)
-                                                                        elif unit.team == "Equipe 2":
-                                                                            self.team2_units.remove(unit)
-                                                                        self.player_units.remove(unit)
                                                                     #Si la comptétence possède un effet, il est appliqué:
                                                                     if chosen_skill.effet is not None:
                                                                         self.apply_effect(unit, chosen_skill)
@@ -299,9 +313,6 @@ class Game:
                                                                     if selected_unit.use_skill(unit, chosen_skill, self.screen):
                                                                         has_acted = True
                                                                     pygame.time.wait(300)
-                                                                    #La cible retirée des liste si nécessaire:
-                                                                    if enemy.health <= 0:
-                                                                        self.enemy_units.remove(enemy)
                                                                     #Et l'effet appliqué si besoin:
                                                                     if chosen_skill.effet is not None:
                                                                         self.apply_effect(enemy, chosen_skill)
@@ -312,7 +323,23 @@ class Game:
                         #L'utilisateur peut choisir d'afficher plus d'informations à propos d'une unité (en cliquant dessus):
                         elif event.key == pygame.K_i:
                             self.disp_info()
-
+        self.check_death()
+        flip_display(self.screen, self.player_units, self.enemy_units, self.water_zones, self.obstacles, self.current_effects)
+        
+        
+    def check_death(self):
+        for unit in self.team1_units + self.team2_units + self.enemy_units:
+            if unit.health <= 0:
+                if unit in self.enemy_units:
+                    self.enemy_units.remove(unit)
+                elif unit in self.player_units:
+                    if unit in self.team1_units:
+                        self.team1_units.remove(unit)
+                    if unit in self.team2_units:
+                        self.team2_units.remove(unit)
+                    self.player_units.remove(unit)
+        
+                         
     def disp_info(self):
         """"Affichage d'information d'une unité"""
         flip_display(self.screen, self.player_units, self.enemy_units, self.water_zones, self.obstacles, self.current_effects)
@@ -361,11 +388,12 @@ class Game:
                 # Attaque si possible
                 if abs(enemy.x - target.x) <= 1 and abs(enemy.y - target.y) <= 1:
                     enemy.attack(target)
-                    if target.health <= 0:
+                    """if target.health <= 0:
                         self.team1_units.remove(target)
                         self.player_units.remove(target)
                 if enemy.health <= 0:
-                    self.enemy_units.remove(enemy)
+                    self.enemy_units.remove(enemy)"""
+        self.check_death()
 
     def check_end_game(self):
         """Vérifie les conditions de fin de partie."""
@@ -423,6 +451,9 @@ class Game:
             for unit in self.player_units + self.enemy_units:
                 if unit.x == x and unit.y == y:
                     new_effect.apply_effect(unit)
+        self.check_death()
+        flip_display(self.screen, self.player_units, self.enemy_units, self.water_zones, self.obstacles, self.current_effects)
+        
 
     def update_effects(self):
         """Mise a jour des durée de vie des effets, et application des effets sur les unités."""
@@ -437,7 +468,9 @@ class Game:
 
         #Si la durée de vie de l'effet a expiré, l'effet est enlevé de la liste:
         self.current_effects = [((x, y), effect) for (x, y), effect in self.current_effects if effect.effectTTL > 0]
-
+        self.check_death()
+        flip_display(self.screen, self.player_units, self.enemy_units, self.water_zones, self.obstacles, self.current_effects)
+        
     def handle_turns(self):
         """Gestion des tours selon le mode de jeu """
         #Si le mode PvP est sélectionné:
