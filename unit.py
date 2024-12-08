@@ -80,9 +80,12 @@ class Unit(ABC):
         self.is_selected = False
         self.effect_status = None
 
-    def move(self, dx, dy, obstacles, water_zones, screen):
+    def move(self, dx, dy, obstacles, water_zones, units_list, screen):
         """Déplace l'unité de dx, dy en vérifiant les obstacles et les zones d'eau."""
         if (0 <= self.x + dx < GRID_SIZE and 0 <= self.y + dy < GRID_SIZE and (self.x + dx, self.y + dy) not in obstacles):
+            for unit in units_list:
+                if (self.x+dx) == unit.x and (self.y+dy) == unit.y:
+                    return False
             self.x += dx
             self.y += dy
             # Si les coordonnées correspondent à une zone d'eau:
@@ -92,7 +95,7 @@ class Unit(ABC):
                 pygame.time.wait(2000)  # Attendre 2 secondes pour que le message soit visible
                 # L'unité meurt
                 self.health = 0
-
+            return True
 
     def attack(self, target):
         """Attaque une unité cible."""

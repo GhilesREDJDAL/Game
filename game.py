@@ -195,13 +195,14 @@ class Game:
                         #Si l'unité peut encore de déplacer:
                         if mvmt_cpt >= 0 and move_key == True:
                             #Elle se déplace et le compteur est décremnté de 1:
-                            selected_unit.move(dx, dy, self.obstacles, self.water_zones, self.screen)
-                            mvmt_cpt -= 1  # Reduce the movement counter
+                            if selected_unit.move(dx, dy, self.obstacles, self.water_zones, self.player_units + self.enemy_units, self.screen):
+                                mvmt_cpt -= 1  # Reduce the movement counter
                             flip_display(self.screen, self.player_units, self.enemy_units, self.water_zones, self.obstacles, self.current_effects)
                         #Si elle ne peut plus se déplacer:
                         elif mvmt_cpt < 0:
                             #On affiche un message:
                             if (event.key != pygame.K_s) and (event.key != pygame.K_ESCAPE):
+                                flip_display(self.screen, self.player_units, self.enemy_units, self.water_zones, self.obstacles, self.current_effects)
                                 draw_text(self.screen, "Vous ne pouvez plus vous déplacer.", (10, HEIGHT + 10))
                                 pygame.display.flip()
                                 pygame.time.wait(500)
