@@ -19,11 +19,13 @@ RED = (255, 0, 0)
 STONE_IMAGE = pygame.image.load("images/stone.png")
 WATER_IMAGE = pygame.image.load("images/water.png")
 BONUS_IMAGE = pygame.image.load("images/bonus.png")
+FOREST_BACKGROUND_IMAGE = pygame.image.load("images/forest_background2.png")
 
 # Redimensionner les images pour correspondre à la taille des cellules
 STONE_IMAGE = pygame.transform.scale(STONE_IMAGE, (CELL_SIZE, CELL_SIZE))
 WATER_IMAGE = pygame.transform.scale(WATER_IMAGE, (CELL_SIZE, CELL_SIZE))
 BONUS_IMAGE = pygame.transform.scale(BONUS_IMAGE, (CELL_SIZE, CELL_SIZE))
+FOREST_BACKGROUND_IMAGE = pygame.transform.scale(FOREST_BACKGROUND_IMAGE, (WIDTH, HEIGHT))
 
 # Classe qui gère le déplacement des unités
 class Movement:
@@ -173,6 +175,7 @@ class AnimationManager:
             x = start_x + (end_x - start_x) * step / steps
             y = start_y + (end_y - start_y) * step / steps
             self.screen.fill(BLACK)
+            self.draw_background()
             self.draw_grid(obstacles, water_zones, bonuses)
             self.draw_units(units)
             self.screen.blit(unit.image, (x, y))
@@ -182,6 +185,7 @@ class AnimationManager:
     def animate_attack(self, attacker, defender, obstacles, water_zones, bonuses, units):
         """Anime l'attaque de l'unité."""
         self.screen.fill(BLACK)
+        self.draw_background()
         self.draw_grid(obstacles, water_zones, bonuses)
         self.draw_units(units)
         pygame.draw.line(self.screen, RED,
@@ -195,6 +199,7 @@ class AnimationManager:
         """Anime la mort de l'unité."""
         for alpha in range(255, 0, -10):
             self.screen.fill(BLACK)
+            self.draw_background()
             self.draw_grid(obstacles, water_zones, bonuses)
             self.draw_units(units)
             unit.image.set_alpha(alpha)
@@ -206,6 +211,7 @@ class AnimationManager:
         """Anime le bonus de l'unité."""
         for alpha in range(0, 255, 10):
             self.screen.fill(BLACK)
+            self.draw_background()
             self.draw_grid(obstacles, water_zones, bonuses)
             self.draw_units(units)
             bonus_image = pygame.Surface((CELL_SIZE, CELL_SIZE), pygame.SRCALPHA)
@@ -213,6 +219,9 @@ class AnimationManager:
             self.screen.blit(bonus_image, (unit.x * CELL_SIZE, unit.y * CELL_SIZE))
             pygame.display.flip()
             pygame.time.wait(50)
+
+    def draw_background(self):
+        self.screen.blit(FOREST_BACKGROUND_IMAGE, (0, 0))
 
     def draw_grid(self, obstacles, water_zones, bonuses):
         # Affichage des obstacles
@@ -372,6 +381,7 @@ class Game:
 
     def flip_display(self):
         self.screen.fill(BLACK)
+        self.animation_manager.draw_background()
         self.animation_manager.draw_grid(self.obstacles, self.water_zones, self.bonuses)
         self.animation_manager.draw_units(self.player_units + self.enemy_units)
         pygame.display.flip()
