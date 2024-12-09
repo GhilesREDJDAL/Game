@@ -145,6 +145,8 @@ class Unit(ABC):
     def health(self, valeur):
         if valeur >= 0 and isinstance(valeur, int):
             self.__health = valeur
+            if self.__health >= self.max_health:
+                self.__health = self.max_health
         else:
             raise TypeError("La valeur de la santé doit être un entier positif.")
 
@@ -256,7 +258,7 @@ class Sorcier(Unit):
         """
         super().__init__(x, y, 75, 100, 75, 3, 0.1, 0.1, team)
         self.type = "Ranged"
-        self.skills = [BouleDeFeu()]  # Gele() à ajouter plus tard
+        self.skills = [BouleDeFeu(), Teleportation(), ZoneDeSoin()]  # Gele() à ajouter plus tard
     
     def draw(self, screen):
         if self.is_selected:

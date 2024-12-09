@@ -39,6 +39,7 @@ class Competence(ABC):
         self.portee = portee
         self.aoe_radius = aoe_radius  # Area of effect radius
         self.effet = effet
+        self.type = None
 
     def use(self, utilisateur, cible, screen):
         """ Utilisation de la compétence """
@@ -84,22 +85,27 @@ class TirArc(Competence):
     """ Sous fille TirArc de Compétence """
     def __init__(self):
         super().__init__("Tir à l'arc", 15, 10, 1)
+        self.type = "Attack"
 
 class FlecheEmpoisonnee(Competence):
     def __init__(self):
         super().__init__("Flèche empoisonnée", 10, 10, 1, Poison())
-
+        self.type = "Attack"
+        
 class BouleDeFeu(Competence):
     def __init__(self):
         super().__init__("Boule de feu", 25, 5, 3, Feu())
+        self.type = "Attack"
 
 class CoupDEpee(Competence):
     def __init__(self):
         super().__init__("Coup d'épée", 25, 1, 1)
+        self.type = "Attack"
 
 class CoupDeBouclier(Competence):
     def __init__(self):
         super().__init__("Coup de bouclier", 10, 1, 1)
+        self.type = "Attack"
 
     def use(self, utilisateur, cible, screen):
         """ Surcharge de la méthode d'utilisation de la compétence, adaptée à celle-ci"""
@@ -119,3 +125,23 @@ class CoupDeBouclier(Competence):
         elif dy < 0 and cible.y > 0:
             cible.y -= 1
         return True
+
+class Teleportation(Competence):
+    def __init__(self):
+        super().__init__("Teleportation", 0, 99, 0)
+        self.type = "Movement"
+    def use(self, utilisateur, cible, screen):
+        utilisateur.x = cible[0]
+        utilisateur.y = cible[1]
+        self.display_message(screen, f"Vous vous êtes téléportés à l'emplacement ({cible[0]}, {cible[1]})!")
+        return True
+
+class ZoneDeSoin(Competence):
+    def __init__(self):
+        super().__init__("Zone de Soin", 10, 99, 3, effet=Soin())
+        self.type = "Zone"
+    
+    def use(self, utilsiateur, cible, screen):
+        self.display_message(screen, f"Vous avez créé une zone de soin!")
+        return True
+    

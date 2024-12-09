@@ -7,7 +7,7 @@ Created on Thu Dec 5 16:32:40 2024
 """
 
 import pygame
-from Constantes import WATER_BLUE, WHITE ,GRAY, BLACK, WIDTH, HEIGHT, CELL_SIZE, MARGIN_BOTTOM
+from Constantes import WATER_BLUE, WHITE ,GRAY, BLACK, WIDTH, HEIGHT, CELL_SIZE, GRID_SIZE, MARGIN_BOTTOM
 
 # On charge les images utilisées pour l'environnement (herbe, eau et obstacles)
 grass_image = pygame.image.load('images/grass.png')
@@ -85,3 +85,26 @@ def draw_effects(screen, current_effects):
 
         # Dessine la superposition sur la cellule spécifiée
         screen.blit(overlay, (x * CELL_SIZE, y * CELL_SIZE))
+
+def disp_move_range(screen, selected_unit, moves):
+    """Affiche la portée de déplacement maximale de l'unité."""
+    color = (0, 0, 255, 128)
+    overlay = pygame.Surface((CELL_SIZE, CELL_SIZE))
+    overlay.set_alpha(128) 
+    overlay.fill(color)
+
+    # Calcule les coordonnées accessibles:
+    x, y = selected_unit.x, selected_unit.y
+    for dx in range(-moves, moves + 1):
+        for dy in range(-moves, moves + 1):
+            if abs(dx) + abs(dy) <= moves:  # Vérifie la distance de Manhattan
+                new_x = x + dx
+                new_y = y + dy
+                # Vérifie que les nouvelles coordonnées sont dans les limites de la grille
+                if 0 <= new_x < GRID_SIZE and 0 <= new_y < GRID_SIZE:
+                    if (new_x, new_y) != (x, y):
+                        screen.blit(overlay, (new_x * CELL_SIZE, new_y * CELL_SIZE))
+
+    pygame.display.flip()
+    
+
