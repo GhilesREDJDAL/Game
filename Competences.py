@@ -55,11 +55,11 @@ class Competence(ABC):
             else:
                 dmg = max(0, utilisateur.attack_power - cible.defense_power)
                 self.display_message(screen, f"Dégâts infligés: {dmg}")
-
+                        
             if cible.health <= dmg:
-                cible.health = 0
+                cible.take_damage(utilisateur, 0)
             else:
-                cible.health -= dmg
+                cible.take_damage(utilisateur, dmg)
 
             if self.effet:
                 cible.effect_status = self.effet
