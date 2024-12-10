@@ -123,8 +123,13 @@ class Unit(ABC):
         pygame.draw.rect(screen, RED, (x, y, bar_width, bar_height))
         pygame.draw.rect(screen, GREEN, (x, y, bar_width * health_ratio, bar_height))
     
-    def take_damage(self, damage):
-        self.health = max(0, self.health - damage)
+    def take_damage(self, dmg_dealer, damage):
+        dmg = self.weakness_rotation(dmg_dealer, damage)
+        if isinstance(dmg_dealer, Unit):
+            if dmg_dealer.team == self.team:
+                dmg = 0
+        self.health = max(0, self.health - dmg)
+
 
     @property
     def x(self):
@@ -164,7 +169,11 @@ class Unit(ABC):
     def use_skill(self, target, skill, screen):
         skill.use(self, target, screen)
         return True
-        
+    
+    @abstractmethod
+    def weakness_rotation(self, cible, dmg):
+        pass
+    
 class Archer(Unit):
     """
     Classe représentant un archer.
@@ -219,6 +228,13 @@ class Archer(Unit):
                                        self.y * CELL_SIZE + (CELL_SIZE * 0.05)))
         self.draw_health_bar(screen)
         
+    def weakness_rotation(self, dmg_dealer, dmg):
+        if isinstance(dmg_dealer, Sorcier):
+            dmg *= 1.1
+        elif isinstance(dmg_dealer, Guerrier):
+            dmg *= 0.9
+        return dmg
+    
 class Sorcier(Unit):
     """
     Classe représentant un sorcier.
@@ -271,7 +287,14 @@ class Sorcier(Unit):
             screen.blit(enemy_mage, (self.x * CELL_SIZE + (CELL_SIZE * 0.05),
                                        self.y * CELL_SIZE + (CELL_SIZE * 0.05)))
         self.draw_health_bar(screen)
-        
+    
+    def weakness_rotation(self, dmg_dealer, dmg):
+        if isinstance(dmg_dealer, Guerrier):
+            dmg *= 1.1
+        elif isinstance(dmg_dealer, Archer):
+            dmg *= 0.9
+        return dmg
+    
 class Guerrier(Unit):
     """
     Classe représentant un guerrier.
@@ -324,3 +347,10 @@ class Guerrier(Unit):
             screen.blit(enemy_knight, (self.x * CELL_SIZE + (CELL_SIZE * 0.05),
                                        self.y * CELL_SIZE + (CELL_SIZE * 0.05)))
         self.draw_health_bar(screen)
+    
+    def weakness_rotation(self, dmg_dealer, dmg):
+        if isinstance(dmg_dealer, Sorcier):
+            dmg *= 1.1
+        elif isinstance(dmg_dealer, Archer):
+            dmg *= 0.9
+        return dmg
