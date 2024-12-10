@@ -113,7 +113,7 @@ class Soin(Effect):
     def apply_effect(self, unit):
         """Applique l'effet de soin à une unité."""
         if self.effectTTL > 0:
-            unit.health += 10  
+            unit.take_damage(self, -10)  
 
 class Feu(Effect):
     """
@@ -133,7 +133,7 @@ class Feu(Effect):
     def apply_effect(self, unit):
         """Applique l'effet de feu à une unité."""
         if self.effectTTL > 0:
-            unit.health = max(0, unit.health - 15)  
+            unit.take_damage(self, 15)  
 
 class Poison(Effect):
     """
@@ -148,9 +148,9 @@ class Poison(Effect):
 
     def __init__(self):
         """Initialise l'effet de poison avec une durée de 3 tours."""
-        super().__init__("Poison", effect_duration=3)
+        super().__init__("Poison", effect_duration=2)
         
     def apply_effect(self, unit):
         """Applique l'effet de poison à une unité."""
         if self.effectTTL > 0:
-            unit.health = max(0, unit.health - 25)
+            unit.take_damage(self, 25)
