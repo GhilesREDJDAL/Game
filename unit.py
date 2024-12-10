@@ -349,8 +349,8 @@ class Guerrier(Unit):
         self.draw_health_bar(screen)
     
     def weakness_rotation(self, dmg_dealer, dmg):
-        if isinstance(dmg_dealer, Sorcier):
+        if isinstance(dmg_dealer, Archer):
             dmg *= 1.1
-        elif isinstance(dmg_dealer, Archer):
+        elif isinstance(dmg_dealer, Sorcier):
             dmg *= 0.9
         return dmg
