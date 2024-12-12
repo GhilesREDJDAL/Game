@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 import numpy as np
 from Effects import *
 from utils import draw_text
-from Constantes import HEIGHT, GRID_SIZE
+from Constantes import HEIGHT, GRID_SIZE, CELL_SIZE, WIDTH
 import pygame
 
 class Competence(ABC):
@@ -52,12 +52,11 @@ class Competence(ABC):
                 crit_dmg = (utilisateur.attack_power + self.puissance) * 2
                 dmg = max(0, crit_dmg - cible.defense_power)
                 self.display_message(screen, f"Coup critique! Dégâts infligés: {dmg}")
-                cible.take_damage(utilisateur, dmg)
+                self.draw_skill_effect(screen, (cible.x, cible.y))
             else:
                 dmg = max(0, (utilisateur.attack_power + self.puissance) - cible.defense_power)
                 self.display_message(screen, f"Dégâts infligés: {dmg}")
                 cible.take_damage(utilisateur, dmg)
-
             if self.effet:
                 cible.effect_status = self.effet
             return True
@@ -77,17 +76,32 @@ class Competence(ABC):
         draw_text(screen, text, (10, HEIGHT + 10)) 
         pygame.display.flip()
 
+    def draw_skill_effect(self, screen):
+    	pass
+
+fleche_frame = pygame.image.load("images/skills/Barrage/target_1.png")
+fleche_frame = pygame.transform.scale(fleche_frame, (CELL_SIZE, CELL_SIZE))
 class TirArc(Competence):
     """ Sous fille TirArc de Compétence """
     def __init__(self):
         super().__init__("Tir à l'arc", 15, 99, 1)
         self.type = "Attack"
+        
+    def use(self, utilisateur, cible, screen, extra_aoelist=None):
+        super().use(utilisateur, cible, screen)
+        self.draw_skill_effect(screen, [(cible.x, cible.y)])
+        
+    def draw_skill_effect(self, screen, positions):
+        x, y = positions[0][0], positions[0][1]
+        screen.blit(fleche_frame, (x * CELL_SIZE, y * CELL_SIZE))
+        pygame.display.flip()
+        pygame.time.wait(30)
 
 class FlecheEmpoisonnee(Competence):
     def __init__(self):
         super().__init__("Flèche empoisonnée", 10, 5, 1, Poison())
         self.type = "Attack"
-        
+
 class BarrageDeFleches(Competence):
     def __init__(self):
         super().__init__("Barrage de Fleches", 55, 80, 1)
@@ -98,12 +112,32 @@ class BarrageDeFleches(Competence):
         for enemy in extra_aoelist:
             if enemy.y == y:
                 super().use(utilisateur, enemy, screen)
-
+                self.draw_skill_effect(screen, [(enemy.x, enemy.y)])
+                
+    def draw_skill_effect(self, screen, positions):
+        x, y = positions[0][0], positions[0][1]
+        screen.blit(fleche_frame, (x * CELL_SIZE, y * CELL_SIZE))
+        pygame.display.flip()
+        pygame.time.wait(30)
+            
+bdf_frames = [pygame.image.load(f"images/skills/FB_hit/fb_hit_{i}.png") for i in range(1, 4)]  # Adjust based on your actual frame files
+bdf_frames = [pygame.transform.scale(img, (CELL_SIZE, CELL_SIZE)) for img in bdf_frames] 
 class BouleDeFeu(Competence):
     def __init__(self):
         super().__init__("Boule de feu", 25, 5, 3, Feu())
         self.type = "Attack"
-
+        
+    def use(self, utilisateur, cible, screen, extra_aoelist=None):
+        super().use(utilisateur, cible, screen)
+        self.draw_skill_effect(screen, [(cible.x, cible.y)])
+        
+    def draw_skill_effect(self, screen, positions):
+        x, y = positions[0][0], positions[0][1]
+        for frame in bdf_frames:
+            screen.blit(frame, (x * CELL_SIZE, y * CELL_SIZE))
+            pygame.display.flip()
+            pygame.time.wait(100)
+            
 class CoupDEpee(Competence):
     def __init__(self):
         super().__init__("Coup d'épée", 25, 1, 1)
@@ -151,7 +185,14 @@ class ZoneDeSoin(Competence):
     def use(self, utilsiateur, cible, screen):
         self.display_message(screen, f"Vous avez créé une zone de soin!")
         return True
-        
+  
+
+sword_frames = [pygame.image.load(f"images/skills/Sword/sword_{i}.png") for i in range(1, 4)]  # Adjust based on your actual frame files
+sword_frames = [pygame.transform.scale(img, (CELL_SIZE, CELL_SIZE*1.5)) for img in sword_frames]      
+sword_ground = pygame.image.load('images/skills/Sword/ground.png')
+sword_ground = pygame.transform.scale(sword_ground, (CELL_SIZE, CELL_SIZE))
+
+
 class EpeeDivine(Competence):
     def __init__(self):
         super().__init__("Epée Divine", 40, 99, 1)
@@ -159,7 +200,6 @@ class EpeeDivine(Competence):
 
     def use(self, utilisateur, cible, screen, extra_aoelist):
         x, y = cible.x, cible.y
-        print("inside ed")
         positions = [
             (x, y),
             (x - 1, y), (x + 1, y),
@@ -167,10 +207,32 @@ class EpeeDivine(Competence):
             (x - 2, y), (x + 2, y),
             (x, y - 2), (x, y + 2)
         ]
-
+        self.draw_skill_effect(screen, positions)
         for enemy in extra_aoelist:
             if (enemy.x, enemy.y) in positions:
                 super().use(utilisateur, enemy, screen)
 
         return True
+        
+    def draw_skill_effect(self, screen, positions):
+        x, y = positions[0][0], positions[0][1]
+        # Play sword animation
+        start_time = pygame.time.get_ticks()
+        frame_duration = 100  # 0.1 second per frame
+
+        for frame in sword_frames:
+            screen.blit(frame, (x * CELL_SIZE, y * CELL_SIZE - CELL_SIZE/2))
+            pygame.display.flip()
+            pygame.time.wait(100)
+
+        max_x = WIDTH // CELL_SIZE - 1
+        max_y = HEIGHT // CELL_SIZE - 1
+
+        # Play ground breaking animation in "+" pattern using a single frame
+        for pos in positions:
+            px, py = pos
+            if 0 <= px <= max_x and 0 <= py <= max_y:  # Boundary check
+                screen.blit(sword_ground, (px * CELL_SIZE, py * CELL_SIZE))
+        pygame.display.flip()
+        pygame.time.wait(frame_duration)  # Wait for the ground breaking effect to be visible
 
