@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 import numpy as np
 from Effects import *
 from utils import draw_text
-from Constantes import HEIGHT
+from Constantes import HEIGHT, GRID_SIZE
 import pygame
 
 class Competence(ABC):
@@ -41,7 +41,7 @@ class Competence(ABC):
         self.effet = effet
         self.type = None
 
-    def use(self, utilisateur, cible, screen):
+    def use(self, utilisateur, cible, screen, extra_aoelist=None):
         """ Utilisation de la compétence """
         if abs(utilisateur.x - cible.x) <= self.portee and abs(utilisateur.y - cible.y) <= self.portee:
             if self.dodge_check(cible):
@@ -52,18 +52,14 @@ class Competence(ABC):
                 crit_dmg = (utilisateur.attack_power + self.puissance) * 2
                 dmg = max(0, crit_dmg - cible.defense_power)
                 self.display_message(screen, f"Coup critique! Dégâts infligés: {dmg}")
+                cible.take_damage(utilisateur, dmg)
             else:
-                dmg = max(0, utilisateur.attack_power - cible.defense_power)
+                dmg = max(0, (utilisateur.attack_power + self.puissance) - cible.defense_power)
                 self.display_message(screen, f"Dégâts infligés: {dmg}")
-                        
-            if cible.health <= dmg:
-                cible.take_damage(utilisateur, 0)
-            else:
                 cible.take_damage(utilisateur, dmg)
 
             if self.effet:
                 cible.effect_status = self.effet
-
             return True
     
     def crit_check(self, utilisateur):
@@ -84,14 +80,25 @@ class Competence(ABC):
 class TirArc(Competence):
     """ Sous fille TirArc de Compétence """
     def __init__(self):
-        super().__init__("Tir à l'arc", 15, 10, 1)
+        super().__init__("Tir à l'arc", 15, 99, 1)
         self.type = "Attack"
 
 class FlecheEmpoisonnee(Competence):
     def __init__(self):
-        super().__init__("Flèche empoisonnée", 10, 10, 1, Poison())
+        super().__init__("Flèche empoisonnée", 10, 5, 1, Poison())
         self.type = "Attack"
         
+class BarrageDeFleches(Competence):
+    def __init__(self):
+        super().__init__("Barrage de Fleches", 55, 80, 1)
+        self.type = "AoE"
+
+    def use(self, utilisateur, cible, screen, extra_aoelist):
+        x, y = cible.x, cible.y
+        for enemy in extra_aoelist:
+            if enemy.y == y:
+                super().use(utilisateur, enemy, screen)
+
 class BouleDeFeu(Competence):
     def __init__(self):
         super().__init__("Boule de feu", 25, 5, 3, Feu())
@@ -107,7 +114,7 @@ class CoupDeBouclier(Competence):
         super().__init__("Coup de bouclier", 10, 1, 1)
         self.type = "Attack"
 
-    def use(self, utilisateur, cible, screen):
+    def use(self, utilisateur, cible, screen, extra_aoelist=None):
         """ Surcharge de la méthode d'utilisation de la compétence, adaptée à celle-ci"""
         success = super().use(utilisateur, cible, screen)
         if not success:
@@ -144,4 +151,26 @@ class ZoneDeSoin(Competence):
     def use(self, utilsiateur, cible, screen):
         self.display_message(screen, f"Vous avez créé une zone de soin!")
         return True
-    
+        
+class EpeeDivine(Competence):
+    def __init__(self):
+        super().__init__("Epée Divine", 40, 99, 1)
+        self.type = "AoE"
+
+    def use(self, utilisateur, cible, screen, extra_aoelist):
+        x, y = cible.x, cible.y
+        print("inside ed")
+        positions = [
+            (x, y),
+            (x - 1, y), (x + 1, y),
+            (x, y - 1), (x, y + 1),
+            (x - 2, y), (x + 2, y),
+            (x, y - 2), (x, y + 2)
+        ]
+
+        for enemy in extra_aoelist:
+            if (enemy.x, enemy.y) in positions:
+                super().use(utilisateur, enemy, screen)
+
+        return True
+
