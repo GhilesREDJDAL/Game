@@ -84,7 +84,7 @@ fleche_frame = pygame.transform.scale(fleche_frame, (CELL_SIZE, CELL_SIZE))
 class TirArc(Competence):
     """ Sous fille TirArc de Compétence """
     def __init__(self):
-        super().__init__("Tir à l'arc", 15, 99, 1)
+        super().__init__("Tir à l'arc", 20, 99, 1)
         self.type = "Attack"
         
     def use(self, utilisateur, cible, screen, extra_aoelist=None):
@@ -104,7 +104,7 @@ class FlecheEmpoisonnee(Competence):
 
 class BarrageDeFleches(Competence):
     def __init__(self):
-        super().__init__("Barrage de Fleches", 55, 80, 1)
+        super().__init__("Barrage de Fleches", 15, 80, 1)
         self.type = "AoE"
 
     def use(self, utilisateur, cible, screen, extra_aoelist):
@@ -140,12 +140,12 @@ class BouleDeFeu(Competence):
             
 class CoupDEpee(Competence):
     def __init__(self):
-        super().__init__("Coup d'épée", 25, 1, 1)
+        super().__init__("Coup d'épée", 35, 1, 1)
         self.type = "Attack"
 
 class CoupDeBouclier(Competence):
     def __init__(self):
-        super().__init__("Coup de bouclier", 10, 1, 1)
+        super().__init__("Coup de bouclier", 20, 1, 1)
         self.type = "Attack"
 
     def use(self, utilisateur, cible, screen, extra_aoelist=None):
@@ -171,7 +171,7 @@ class Teleportation(Competence):
     def __init__(self):
         super().__init__("Teleportation", 0, 99, 0)
         self.type = "Movement"
-    def use(self, utilisateur, cible, screen):
+    def use(self, utilisateur, cible, screen, extra_aoelist=None):
         utilisateur.x = cible[0]
         utilisateur.y = cible[1]
         self.display_message(screen, f"Vous vous êtes téléportés à l'emplacement ({cible[0]}, {cible[1]})!")
@@ -182,7 +182,7 @@ class ZoneDeSoin(Competence):
         super().__init__("Zone de Soin", 10, 99, 3, effet=Soin())
         self.type = "Zone"
     
-    def use(self, utilsiateur, cible, screen):
+    def use(self, utilsiateur, cible, screen, extra_aoelist=None):
         self.display_message(screen, f"Vous avez créé une zone de soin!")
         return True
   
@@ -195,7 +195,7 @@ sword_ground = pygame.transform.scale(sword_ground, (CELL_SIZE, CELL_SIZE))
 
 class EpeeDivine(Competence):
     def __init__(self):
-        super().__init__("Epée Divine", 40, 99, 1)
+        super().__init__("Epée Divine", 30, 99, 1)
         self.type = "AoE"
 
     def use(self, utilisateur, cible, screen, extra_aoelist):

@@ -52,7 +52,7 @@ class Game:
     handle_turns
         Gère le tour par tour selon le mode de jeu (PvP/PvE)
     """
-
+    
     def __init__(self, screen):
         """
         Construit le jeu avec la surface de la fenêtre.
@@ -70,10 +70,24 @@ class Game:
         self.up_coords = [(1, 1), (1, 2), (2, 1)]
         self.down_coords = [(GRID_SIZE-1, GRID_SIZE-1), (GRID_SIZE-1, GRID_SIZE-2), (GRID_SIZE-2, GRID_SIZE-1)]
         self.mode_de_jeu = None
-        self.obstacles = {(3, 3), (4, 4), (5, 5)}
-        self.water_zones = {(2, 2), (6, 2)}
+        self.obstacles = self.generate_random_positions(
+            10, WIDTH // CELL_SIZE, HEIGHT // CELL_SIZE, excluded_positions=self.up_coords + self.down_coords
+        )
+        self.water_zones = self.generate_random_positions(
+            10, WIDTH // CELL_SIZE, HEIGHT // CELL_SIZE, excluded_positions=self.obstacles + self.up_coords + self.down_coords
+        )
         self.current_effects = []
-        
+
+    def generate_random_positions(self, num_positions, grid_width, grid_height, excluded_positions=None):
+        if excluded_positions is None:
+            excluded_positions = []
+        positions = []
+        while len(positions) < num_positions:
+            pos = (random.randint(0, grid_width - 1), random.randint(0, grid_height - 1))
+            if pos not in excluded_positions and pos not in positions:
+                positions.append(pos)
+        return positions
+
     def afficher_menu(self):
         global GAME_CONTINUE
         """Affiche le menu de sélection du mode de jeu."""
@@ -376,6 +390,11 @@ class Game:
                                                                             self.apply_effect(unit, chosen_skill)
                                                                         cible_choisie = True
                                                                         selected_unit.is_selected = False
+                                                                        if (unit.x, unit.y) in self.water_zones:
+                                                                            draw_text(self.screen, "L'unité est tombée à l'eau!", (10, HEIGHT + 10))
+                                                                            pygame.display.flip()
+                                                                            pygame.time.wait(300)
+                                                                            unit.health = 0
                                                                         break
                                                     
                                                                 #Si la cible est une unité ennemie (PvE):
@@ -392,6 +411,11 @@ class Game:
                                                                         cible_choisie = True
                                                                         has_acted = True 
                                                                         selected_unit.is_selected = False #L'unité est déselectionnée
+                                                                        if (unit.x, unit.y) in self.water_zones:
+                                                                            draw_text(self.screen, "L'unité est tombée à l'eau!", (10, HEIGHT + 10))
+                                                                            pygame.display.flip()
+                                                                            pygame.time.wait(300)
+                                                                            unit.health = 0
                                                                         break  
                                             elif skill_index == len(selected_unit.skills):
                                                 if selected_unit.item is not None:

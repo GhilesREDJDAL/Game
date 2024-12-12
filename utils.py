@@ -10,13 +10,30 @@ import pygame
 from Constantes import WATER_BLUE, WHITE ,GRAY, BLACK, WIDTH, HEIGHT, CELL_SIZE, GRID_SIZE, MARGIN_BOTTOM
 
 # On charge les images utilisées pour l'environnement (herbe, eau et obstacles)
-grass_image = pygame.image.load('images/grass.png')
-water_image = pygame.image.load('images/water.png')
-obstacle_image = pygame.image.load('images/stone.png')
+grass_image = pygame.image.load('images/textures/grass.png')
+water_image = pygame.image.load('images/textures/water_mc.png')
+water_image_up = pygame.image.load('images/textures/water_tc.png')
+water_image_uleft = pygame.image.load('images/textures/water_tl.png')
+water_image_uright = pygame.image.load('images/textures/water_tr.png')
+water_image_down = pygame.image.load('images/textures/water_bc.png')
+water_image_dleft = pygame.image.load('images/textures/water_bl.png')
+water_image_dright = pygame.image.load('images/textures/water_br.png')
+water_image_left = pygame.image.load('images/textures/water_ml.png')
+water_image_right = pygame.image.load('images/textures/water_mr.png')
+obstacle_image = pygame.image.load('images/textures/rock_1.png')
 
 # On met les images à la bonne échelle.
 grass_image = pygame.transform.scale(grass_image, (CELL_SIZE, CELL_SIZE))
 water_image = pygame.transform.scale(water_image, (CELL_SIZE, CELL_SIZE))
+water_image_up = pygame.transform.scale(water_image_up, (CELL_SIZE, CELL_SIZE))
+water_image_down = pygame.transform.scale(water_image_down, (CELL_SIZE, CELL_SIZE))
+water_image_left = pygame.transform.scale(water_image_left, (CELL_SIZE, CELL_SIZE))
+water_image_right = pygame.transform.scale(water_image_right, (CELL_SIZE, CELL_SIZE))
+
+water_image_uleft = pygame.transform.scale(water_image_uleft, (CELL_SIZE, CELL_SIZE))
+water_image_uright = pygame.transform.scale(water_image_uright, (CELL_SIZE, CELL_SIZE))
+water_image_dleft = pygame.transform.scale(water_image_dleft, (CELL_SIZE, CELL_SIZE))
+water_image_dright = pygame.transform.scale(water_image_dright, (CELL_SIZE, CELL_SIZE))
 obstacle_image = pygame.transform.scale(obstacle_image, (CELL_SIZE, CELL_SIZE))
         
 
@@ -52,16 +69,30 @@ def flip_display(screen, player_units, enemy_units, water_zones, obstacles, curr
     for x in range(0, WIDTH, CELL_SIZE):
         for y in range(0, HEIGHT, CELL_SIZE):
             screen.blit(grass_image, (x, y))
-            rect = pygame.Rect(x, y, CELL_SIZE, CELL_SIZE)
-            pygame.draw.rect(screen, WHITE, rect, 1)
 
-    # Affiche les unités
-    for unit in player_units + enemy_units:
-        unit.draw(screen)
+    # Affiche les zones d'eau et les images correspondantes
+    for wx, wy in water_zones:
+        screen.blit(water_image, (wx * CELL_SIZE, wy * CELL_SIZE))
 
-    # Affiche les zones d'eau
-    for x, y in water_zones:
-        screen.blit(water_image, (x * CELL_SIZE, y * CELL_SIZE))
+        # Draw corresponding grass images around water
+        if wx > 0 and (wx - 1, wy) not in water_zones:
+            screen.blit(water_image_left, ((wx - 1) * CELL_SIZE, wy * CELL_SIZE))
+        if wx < WIDTH // CELL_SIZE - 1 and (wx + 1, wy) not in water_zones:
+            screen.blit(water_image_right, ((wx + 1) * CELL_SIZE, wy * CELL_SIZE))
+        if wy > 0 and (wx, wy - 1) not in water_zones:
+            screen.blit(water_image_up, (wx * CELL_SIZE, (wy - 1) * CELL_SIZE))
+        if wy < HEIGHT // CELL_SIZE - 1 and (wx, wy + 1) not in water_zones:
+            screen.blit(water_image_down, (wx * CELL_SIZE, (wy + 1) * CELL_SIZE))
+
+        # Draw diagonal grass images
+        if wx > 0 and wy > 0 and (wx - 1, wy - 1) not in water_zones:
+            screen.blit(water_image_uleft, ((wx - 1) * CELL_SIZE, (wy - 1) * CELL_SIZE))
+        if wx < WIDTH // CELL_SIZE - 1 and wy > 0 and (wx + 1, wy - 1) not in water_zones:
+            screen.blit(water_image_uright, ((wx + 1) * CELL_SIZE, (wy - 1) * CELL_SIZE))
+        if wx > 0 and wy < HEIGHT // CELL_SIZE - 1 and (wx - 1, wy + 1) not in water_zones:
+            screen.blit(water_image_dleft, ((wx - 1) * CELL_SIZE, (wy + 1) * CELL_SIZE))
+        if wx < WIDTH // CELL_SIZE - 1 and wy < HEIGHT // CELL_SIZE - 1 and (wx + 1, wy + 1) not in water_zones:
+            screen.blit(water_image_dright, ((wx + 1) * CELL_SIZE, (wy + 1) * CELL_SIZE))
 
     # Affiche les obstacles
     for x, y in obstacles:
@@ -70,18 +101,30 @@ def flip_display(screen, player_units, enemy_units, water_zones, obstacles, curr
     # Affiche les objets
     for obj in object_list:
         obj.draw(screen)
+
+    # Affiche les unités
+    for unit in player_units + enemy_units:
+        unit.draw(screen)
         
     # Affiche les effets à l'écran
     draw_effects(screen, current_effects)
+
+    # Draw the grid lines last
+    for x in range(0, WIDTH, CELL_SIZE):
+        for y in range(0, HEIGHT, CELL_SIZE):
+            rect = pygame.Rect(x, y, CELL_SIZE, CELL_SIZE)
+            pygame.draw.rect(screen, WHITE, rect, 1)
 
     # Affiche les messages en bas
     pygame.draw.rect(screen, BLACK, pygame.Rect(0, HEIGHT, WIDTH, MARGIN_BOTTOM))
     draw_text(screen, "Pour realisez une action:", (10, HEIGHT + MARGIN_BOTTOM - 90))
     draw_text(screen, " - Utilisez les touches directionnelles pour vous déplacer.", (10, HEIGHT + MARGIN_BOTTOM -60))
     draw_text(screen, " - Utilisez la touche 'S' utiliser une compétence", (10, HEIGHT + MARGIN_BOTTOM - 30))
-    pygame.display.flip()
+
     # Rafraîchit l'écran
     pygame.display.flip()
+
+
     
 def draw_effects(screen, current_effects):
     """Affiche tous les effets actuels à l'écran."""
