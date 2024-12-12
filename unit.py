@@ -101,7 +101,7 @@ class Unit(ABC):
     def attack(self, target):
         """Attaque une unité cible."""
         if abs(self.x - target.x) <= 1 and abs(self.y - target.y) <= 1:
-            target.health = max(0, target.health - (target.defense_power - self.attack_power))
+            pass#target.health = max(0, target.health - (target.defense_power - self.attack_power))
             
     @abstractmethod
     def draw(self, screen):
@@ -128,7 +128,7 @@ class Unit(ABC):
         if isinstance(dmg_dealer, Unit):
             if dmg_dealer.team == self.team:
                 dmg = 0
-        self.health = max(0, self.health - dmg)
+        self.health = int(max(0, self.health - dmg))
 
 
     @property
@@ -166,8 +166,8 @@ class Unit(ABC):
         else:
             raise TypeError(f"La valeur doit être un entier compris entre 0 et {GRID_SIZE} ")
 
-    def use_skill(self, target, skill, screen):
-        skill.use(self, target, screen)
+    def use_skill(self, target, skill, screen, extra_aoelist=None):
+        skill.use(self, target, screen, extra_aoelist)
         return True
     
     @abstractmethod
@@ -213,7 +213,7 @@ class Archer(Unit):
         """
         super().__init__(x, y, 100, 100, 50, 4, 0.1, 0.1, team)
         self.type = "Ranged"
-        self.skills = [TirArc(), FlecheEmpoisonnee()]
+        self.skills = [TirArc(), FlecheEmpoisonnee(), BarrageDeFleches()]
 
     def draw(self, screen):
         if self.is_selected:
@@ -334,7 +334,7 @@ class Guerrier(Unit):
         """
         super().__init__(x, y, 150, 100, 100, 3, 0.1, 0.1, team)
         self.type = "Physical"
-        self.skills = [CoupDEpee(), CoupDeBouclier()]
+        self.skills = [CoupDEpee(), CoupDeBouclier(),EpeeDivine()]
     
     def draw(self, screen):
         if self.is_selected:
