@@ -102,7 +102,7 @@ class Unit(ABC):
         """Attaque une unité cible."""
         if abs(self.x - target.x) <= 1 and abs(self.y - target.y) <= 1:
             target.take_damage(self, (self.attack_power - target.defense_power))
-            
+            print("attako")
     @abstractmethod
     def draw(self, screen):
         """Affiche l'unité sur l'écran."""        
@@ -211,7 +211,7 @@ class Archer(Unit):
         team : str
             L'équipe de l'unité ('player' ou 'enemy').
         """
-        super().__init__(x, y, 100, 100, 50, 4, 0.1, 0.1, team)
+        super().__init__(x, y, 100, 100, 65, 4, 0.1, 0.1, team)
         self.type = "Ranged"
         self.skills = [TirArc(), FlecheEmpoisonnee(), BarrageDeFleches()]
 
@@ -332,7 +332,7 @@ class Guerrier(Unit):
         team : str
             L'équipe de l'unité ('player' ou 'enemy').
         """
-        super().__init__(x, y, 150, 100, 90, 3, 0.1, 0.1, team)
+        super().__init__(x, y, 150, 100, 80, 3, 0.1, 0.1, team)
         self.type = "Physical"
         self.skills = [CoupDEpee(), CoupDeBouclier(),EpeeDivine()]
     

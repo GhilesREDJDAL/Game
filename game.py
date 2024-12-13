@@ -252,10 +252,11 @@ class Game:
                         flip_display(self.screen, self.player_units, self.enemy_units, self.water_zones, self.obstacles, self.current_effects, self.current_objects)
                         #L'utilisateur peut choisir d'utiliser l'attaque basique et de terminer son tour:
                         if event.key == pygame.K_SPACE:
-                            for enemy in self.enemy_units:
-                                #Si lun ennemi est à portée, l'unité attaque:
-                                if abs(selected_unit.x - enemy.x) <= 1 and abs(selected_unit.y - enemy.y) <= 1:
-                                    selected_unit.attack(enemy)
+                            for enemy in self.enemy_units + self.player_units:
+                                if selected_unit.team != enemy.team:
+                                    #Si lun ennemi est à portée, l'unité attaque:
+                                    if abs(selected_unit.x - enemy.x) <= 1 and abs(selected_unit.y - enemy.y) <= 1:
+                                        selected_unit.attack(enemy)
                             has_acted = True #L'indicateur d'action est placé à True
                             selected_unit.is_selected = False #Celui de séléction à False
                         #Si l'utilisateur choisi d'utiliser une compétence d'unité:
