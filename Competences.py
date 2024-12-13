@@ -6,7 +6,7 @@ from Constantes import HEIGHT, GRID_SIZE, CELL_SIZE, WIDTH
 import pygame
 
 class Competence(ABC):
-    """ Classe abstraite mère pour les compétences
+    """ Classe abstraite mère pour les compétences.
     ...
     Attributs
     ---------
