@@ -101,7 +101,7 @@ class Unit(ABC):
     def attack(self, target):
         """Attaque une unité cible."""
         if abs(self.x - target.x) <= 1 and abs(self.y - target.y) <= 1:
-            target.health = max(0, target.health - (target.defense_power - self.attack_power))
+            target.take_damage(self, (self.attack_power - target.defense_power))
             
     @abstractmethod
     def draw(self, screen):
@@ -129,7 +129,7 @@ class Unit(ABC):
             if dmg_dealer.team == self.team:
                 dmg = 0
         self.health = int(max(0, self.health - dmg))
-
+        return True
 
     @property
     def x(self):
@@ -332,7 +332,7 @@ class Guerrier(Unit):
         team : str
             L'équipe de l'unité ('player' ou 'enemy').
         """
-        super().__init__(x, y, 150, 100, 100, 3, 0.1, 0.1, team)
+        super().__init__(x, y, 150, 100, 90, 3, 0.1, 0.1, team)
         self.type = "Physical"
         self.skills = [CoupDEpee(), CoupDeBouclier(),EpeeDivine()]
     

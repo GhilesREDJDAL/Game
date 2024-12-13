@@ -524,7 +524,7 @@ class Game:
                 target_player = random.choice(self.player_units)
                 if not self.player_units:
                     print("No player units available to target")
-                    continue
+                    break
                 #On recupère sa vitesse de déplacement:
                 remaining_steps = enemy.speed
                 target_item = self.find_nearest_item(enemy)
