@@ -70,7 +70,7 @@ def flip_display(screen, player_units, enemy_units, water_zones, obstacles, curr
         for y in range(0, HEIGHT, CELL_SIZE):
             screen.blit(grass_image, (x, y))
 
-    # Affiche les zones d'eau et les images correspondantes
+    # Affiche les zones d'eau et les images correspondantes.
     for water_case in water_zones:
         wx, wy = water_case.x, water_case.y
         screen.blit(water_image, (wx * CELL_SIZE, wy * CELL_SIZE))
