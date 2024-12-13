@@ -534,9 +534,8 @@ class Game:
                         break
                     #On calcule la direction de déplacement:
                     dx, dy = self.calculate_move_direction(enemy, target_item)
+                    #Si il y a des déplacement valides, l'unité se déplace
                     if self.make_valid_move(enemy, dx, dy):
-                        #Si il y a des déplacement valides, l'unité se déplace
-                        enemy.move(dx, dy, self.obstacles, self.water_zones, self.current_objects, self.screen)
                         pygame.time.wait(100)
                         remaining_steps -= 1
                     else:
