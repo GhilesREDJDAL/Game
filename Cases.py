@@ -2,7 +2,27 @@ from abc import ABC, abstractmethod
 from unit import *
 
 class Case(ABC):
+    """ 
+    Classe pour représenter une case.
+    """
+    
     def __init__(self, x, y):
+        """
+        Construit une case avec une position, des paramètres indiquant si elle est occupée ou affectée par un effet.
+    
+        Paramètres
+        ----------
+        x : int
+            La position x de la case sur la grille.
+        y : int
+            La position y de la case sur la grille.
+        occupancy : Unit
+            La santé de l'unité.
+        effect : Effect
+            L'effet par lequel la case est affectée.
+        isaffected : bool
+            Indique si la case est affectée.
+        """
         self.__x = x
         self.__y = y
         self.__occupancy = None
@@ -50,7 +70,7 @@ class Case(ABC):
 
     @effect.setter
     def effect(self, value):
-        if isinstance(value, Effect):
+        if value is None or isinstance(value, Effect):
             self.__effect = value
             self.__isaffected = True
         else:
@@ -66,7 +86,7 @@ class Normal(Case):
     def is_traversable(self):
         return True
             
-class Mur(Case):
+class Obstacle(Case):
     def is_traversable(self):
         return False
 

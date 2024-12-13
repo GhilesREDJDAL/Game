@@ -83,20 +83,20 @@ class Unit(ABC):
 
     def move(self, dx, dy, obstacles, water_zones, units_list, screen):
         """Déplace l'unité de dx, dy en vérifiant les obstacles et les zones d'eau."""
-        if (0 <= self.x + dx < GRID_SIZE and 0 <= self.y + dy < GRID_SIZE and (self.x + dx, self.y + dy) not in obstacles):
+        new_x, new_y = self.x + dx, self.y + dy
+        if 0 <= new_x < GRID_SIZE and 0 <= new_y < GRID_SIZE and (new_x, new_y) not in [(obs.x, obs.y) for obs in obstacles]:
             for unit in units_list:
-                if (self.x+dx) == unit.x and (self.y+dy) == unit.y:
+                if new_x == unit.x and new_y == unit.y:
                     return False
-            self.x += dx
-            self.y += dy
-            # Si les coordonnées correspondent à une zone d'eau:
-            if (self.x, self.y) in water_zones:
+            self.x = new_x
+            self.y = new_y
+            if (self.x, self.y) in [(water.x, water.y) for water in water_zones]:
                 draw_text(screen, f"L'unité de l'équipe {self.team} est tombée dans l'eau à ({self.x}, {self.y}) et est morte !", (10, HEIGHT + 10))
                 pygame.display.flip()
-                pygame.time.wait(2000)  # Attendre 2 secondes pour que le message soit visible
-                # L'unité meurt
-                self.health = 0
+                pygame.time.wait(1000)  # Attendre 2 secondes pour que le message soit visible
+                self.health = 0  # L'unité meurt
             return True
+        return False
 
     def attack(self, target):
         """Attaque une unité cible."""

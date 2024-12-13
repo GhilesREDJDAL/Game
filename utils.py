@@ -71,32 +71,35 @@ def flip_display(screen, player_units, enemy_units, water_zones, obstacles, curr
             screen.blit(grass_image, (x, y))
 
     # Affiche les zones d'eau et les images correspondantes
-    for wx, wy in water_zones:
+    for water_case in water_zones:
+        wx, wy = water_case.x, water_case.y
         screen.blit(water_image, (wx * CELL_SIZE, wy * CELL_SIZE))
-
+        water_case_pos_list = [(water.x, water.y) for water in water_zones]
+	
         # Draw corresponding grass images around water
-        if wx > 0 and (wx - 1, wy) not in water_zones:
+        if wx > 0 and (wx - 1, wy) not in water_case_pos_list:
             screen.blit(water_image_left, ((wx - 1) * CELL_SIZE, wy * CELL_SIZE))
-        if wx < WIDTH // CELL_SIZE - 1 and (wx + 1, wy) not in water_zones:
+        if wx < WIDTH // CELL_SIZE - 1 and (wx + 1, wy) not in water_case_pos_list:
             screen.blit(water_image_right, ((wx + 1) * CELL_SIZE, wy * CELL_SIZE))
-        if wy > 0 and (wx, wy - 1) not in water_zones:
+        if wy > 0 and (wx, wy - 1) not in water_case_pos_list:
             screen.blit(water_image_up, (wx * CELL_SIZE, (wy - 1) * CELL_SIZE))
-        if wy < HEIGHT // CELL_SIZE - 1 and (wx, wy + 1) not in water_zones:
+        if wy < HEIGHT // CELL_SIZE - 1 and (wx, wy + 1) not in water_case_pos_list:
             screen.blit(water_image_down, (wx * CELL_SIZE, (wy + 1) * CELL_SIZE))
 
         # Draw diagonal grass images
-        if wx > 0 and wy > 0 and (wx - 1, wy - 1) not in water_zones:
+        if wx > 0 and wy > 0 and (wx - 1, wy - 1) not in water_case_pos_list:
             screen.blit(water_image_uleft, ((wx - 1) * CELL_SIZE, (wy - 1) * CELL_SIZE))
-        if wx < WIDTH // CELL_SIZE - 1 and wy > 0 and (wx + 1, wy - 1) not in water_zones:
+        if wx < WIDTH // CELL_SIZE - 1 and wy > 0 and (wx + 1, wy - 1) not in water_case_pos_list:
             screen.blit(water_image_uright, ((wx + 1) * CELL_SIZE, (wy - 1) * CELL_SIZE))
-        if wx > 0 and wy < HEIGHT // CELL_SIZE - 1 and (wx - 1, wy + 1) not in water_zones:
+        if wx > 0 and wy < HEIGHT // CELL_SIZE - 1 and (wx - 1, wy + 1) not in water_case_pos_list:
             screen.blit(water_image_dleft, ((wx - 1) * CELL_SIZE, (wy + 1) * CELL_SIZE))
-        if wx < WIDTH // CELL_SIZE - 1 and wy < HEIGHT // CELL_SIZE - 1 and (wx + 1, wy + 1) not in water_zones:
+        if wx < WIDTH // CELL_SIZE - 1 and wy < HEIGHT // CELL_SIZE - 1 and (wx + 1, wy + 1) not in water_case_pos_list:
             screen.blit(water_image_dright, ((wx + 1) * CELL_SIZE, (wy + 1) * CELL_SIZE))
 
     # Affiche les obstacles
-    for x, y in obstacles:
-        screen.blit(obstacle_image, (x * CELL_SIZE, y * CELL_SIZE))
+    for obst in obstacles:
+        ox, oy = obst.x, obst.y
+        screen.blit(obstacle_image, (ox * CELL_SIZE, oy * CELL_SIZE))
 
     # Affiche les objets
     for obj in object_list:
@@ -130,31 +133,33 @@ def draw_effects(screen, current_effects):
     """Affiche tous les effets actuels à l'écran."""
     global img_frame_index, last_update_time # On récupère les variables globales 
     current_time = pygame.time.get_ticks()
-    for (x, y), effect in current_effects:
-        # Exemple : Affiche une animation selon les effets
-        if effect.name == "Feu":
-            if current_time - last_update_time > frame_rate: 
-                last_update_time = current_time 
-                img_frame_index = (img_frame_index + 1) % len(feu_frames) # On affiche la trame courante
-            frame = feu_frames[img_frame_index] 
-            screen.blit(frame, (x * CELL_SIZE, y * CELL_SIZE))
-            #color = (255, 69, 0, 128)  # Orange avec transparence
-        elif effect.name == "Poison":
-            if current_time - last_update_time > frame_rate: 
-                last_update_time = current_time 
-                img_frame_index = (img_frame_index + 1) % len(poison_frames) # On affiche la trame courante
-            frame = poison_frames[img_frame_index] 
-            screen.blit(frame, (x * CELL_SIZE, y * CELL_SIZE))
-            #color = (128, 0, 128, 128)  # Violet avec transparence
-        elif effect.name == "Soin":
-            if current_time - last_update_time > frame_rate: 
-                last_update_time = current_time 
-                img_frame_index = (img_frame_index + 1) % len(healing_frames) # On affiche la trame courante
-            frame = healing_frames[img_frame_index] 
-            screen.blit(frame, (x * CELL_SIZE, y * CELL_SIZE))
-            #color = (0, 255, 0, 128)  # Vert avec transparence
-        else:
-            continue
+    for case in current_effects:
+        if case.effect:
+            x, y = case.x, case.y
+            # Exemple : Affiche une animation selon les effets
+            if case.effect.name == "Feu":
+                if current_time - last_update_time > frame_rate: 
+                    last_update_time = current_time 
+                    img_frame_index = (img_frame_index + 1) % len(feu_frames) # On affiche la trame courante
+                frame = feu_frames[img_frame_index] 
+                screen.blit(frame, (x * CELL_SIZE, y * CELL_SIZE))
+                #color = (255, 69, 0, 128)  # Orange avec transparence
+            elif case.effect.name == "Poison":
+                if current_time - last_update_time > frame_rate: 
+                    last_update_time = current_time 
+                    img_frame_index = (img_frame_index + 1) % len(poison_frames) # On affiche la trame courante
+                frame = poison_frames[img_frame_index] 
+                screen.blit(frame, (x * CELL_SIZE, y * CELL_SIZE))
+                #color = (128, 0, 128, 128)  # Violet avec transparence
+            elif case.effect.name == "Soin":
+                if current_time - last_update_time > frame_rate: 
+                    last_update_time = current_time 
+                    img_frame_index = (img_frame_index + 1) % len(healing_frames) # On affiche la trame courante
+                frame = healing_frames[img_frame_index] 
+                screen.blit(frame, (x * CELL_SIZE, y * CELL_SIZE))
+                #color = (0, 255, 0, 128)  # Vert avec transparence
+            else:
+                continue
 """
         # Crée une surface avec la couleur spécifiée
         overlay = pygame.Surface((CELL_SIZE, CELL_SIZE))

@@ -6,6 +6,7 @@ from unit import *
 from Constantes import GRID_SIZE, CELL_SIZE, WIDTH, HEIGHT, BLACK, WHITE, GRAY, WATER_BLUE, MARGIN_BOTTOM
 from utils import draw_text, flip_display, draw_effects, disp_move_range
 from Objets import *
+from Cases import *
 
 GAME_CONTINUE = True
 
@@ -70,12 +71,18 @@ class Game:
         self.up_coords = [(1, 1), (1, 2), (2, 1)]
         self.down_coords = [(GRID_SIZE-1, GRID_SIZE-1), (GRID_SIZE-1, GRID_SIZE-2), (GRID_SIZE-2, GRID_SIZE-1)]
         self.mode_de_jeu = None
+        """
         self.obstacles = self.generate_random_positions(
             10, WIDTH // CELL_SIZE, HEIGHT // CELL_SIZE, excluded_positions=self.up_coords + self.down_coords
         )
         self.water_zones = self.generate_random_positions(
             10, WIDTH // CELL_SIZE, HEIGHT // CELL_SIZE, excluded_positions=self.obstacles + self.up_coords + self.down_coords
-        )
+        )"""
+        obstacle_positions = self.generate_random_positions( 10, WIDTH // CELL_SIZE, HEIGHT // CELL_SIZE, excluded_positions=self.up_coords + self.down_coords )
+        water_zone_positions = self.generate_random_positions( 10, WIDTH // CELL_SIZE, HEIGHT // CELL_SIZE, excluded_positions=obstacle_positions + self.up_coords + self.down_coords )
+        
+        self.obstacles = [Obstacle(x, y) for x, y in obstacle_positions]
+        self.water_zones = [Eau(x, y) for x, y in water_zone_positions]
         self.current_effects = []
 
     def generate_random_positions(self, num_positions, grid_width, grid_height, excluded_positions=None):
@@ -138,8 +145,8 @@ class Game:
             x = np.random.randint(0, GRID_SIZE)
             y = np.random.randint(0, GRID_SIZE)
             if ((x, y) not in [(unit.x, unit.y) for unit in (self.player_units + self.enemy_units)] and
-                (x, y) not in self.water_zones and
-                (x, y) not in self.obstacles and
+                (x, y) not in [(water.x, water.y) for water in self.water_zones] and
+                (x, y) not in [(obs.x, obs.y) for obs in self.obstacles] and
                 (x, y) not in [(obj.x, obj.y) for obj in self.current_objects]):
                 self.rand_obj_coords.append((x, y))
         self.current_objects = [np.random.choice([PotionVie, AnneauCritique, AnneauEsquive, AnneauVitesse])(x, y) for x, y in self.rand_obj_coords]
@@ -206,6 +213,7 @@ class Game:
                         exit()
                     #L'utilisateur peut choisir de déplacer son unité en 4-connexité:
                     move_key = False
+                    
                     if event.type == pygame.KEYDOWN:
                         dx, dy = 0, 0
                         if event.key == pygame.K_LEFT:
@@ -219,13 +227,18 @@ class Game:
                             move_key = True
                         elif event.key == pygame.K_DOWN:
                             dy = 1
-                            move_key = True                    
+                            move_key = True                  
                         #Si l'unité peut encore de déplacer:
                         if mvmt_cpt >= 0 and move_key == True:
                             #Elle se déplace et le compteur est décremnté de 1:
                             if selected_unit.move(dx, dy, self.obstacles, self.water_zones, self.player_units + self.enemy_units, self.screen):
                                 mvmt_cpt -= 1  # Reduce the movement counter
                                 self.check_pickup(selected_unit)
+                                if selected_unit in turn_units and selected_unit.health <= 0:
+                                    self.player_units.remove(selected_unit)
+                                    #Si c'est le cas, l'unité est enlevée d ela liste de l'équipe.
+                                    has_acted = True
+                                    selected_unit.is_selected = False #On remet l'indicateur de sélection à False
                         #Si elle ne peut plus se déplacer:
                         elif mvmt_cpt < 0:
                             #On affiche un message:
@@ -235,11 +248,8 @@ class Game:
                                 pygame.display.flip()
                                 pygame.time.wait(500)
                             #On verifie que l'unité soit encore en vie (cas où l'unité serait tombée à l'eau)
-                            if selected_unit in turn_units and selected_unit.health <= 0:
-                                #Si c'est le cas, l'unité est enlevée d ela liste de l'équipe.
-                                has_acted = True
-                                selected_unit.is_selected = False #On remet l'indicateur de sélection à False
-                            flip_display(self.screen, self.player_units, self.enemy_units, self.water_zones, self.obstacles, self.current_effects, self.current_objects)
+                        
+                        flip_display(self.screen, self.player_units, self.enemy_units, self.water_zones, self.obstacles, self.current_effects, self.current_objects)
                         #L'utilisateur peut choisir d'utiliser l'attaque basique et de terminer son tour:
                         if event.key == pygame.K_SPACE:
                             for enemy in self.enemy_units:
@@ -317,7 +327,7 @@ class Game:
                                                                 #On veritfie que la case est libre:
                                                                 is_free = all(
                                                                     target_coords != (unit.x, unit.y) for unit in self.player_units + self.enemy_units
-                                                                ) and target_coords not in self.obstacles and target_coords not in self.water_zones
+                                                                ) and target_coords not in [(obs.x, obs.y) for obs in self.obstacles] and target_coords not in [(water.x, water.y) for water in self.water_zones]
                                                             
                                                                 if is_free or chosen_skill.type == "Zone":
                                                                     flip_display(self.screen, self.player_units, self.enemy_units, self.water_zones, self.obstacles, self.current_effects, self.current_objects)
@@ -511,10 +521,10 @@ class Game:
                     continue
                 #On recupère sa vitesse de déplacement:
                 remaining_steps = enemy.speed
+                target_item = self.find_nearest_item(enemy)
                 #Et se déplace vers celle-ci:
-                while remaining_steps > 0:
+                while remaining_steps > 0 and target_item:
                     #On recupère l'objet le plus proche de l'unité
-                    target_item = self.find_nearest_item(enemy)
                     #Si l'unité se trouve directement à coté de l'objet:
                     if abs(enemy.x - target_item.x) + abs(enemy.y - target_item.y) == 1:
                         #Elle le récupère et se déplace à l'emplacement de l'objet.
@@ -592,7 +602,7 @@ class Game:
         for move in possible_moves:
             new_x, new_y = enemy.x + move[0], enemy.y + move[1]
             #Si ces emplacements ne font pas partis des obstacles ou des zones d'eau:
-            if (new_x, new_y) not in self.obstacles and (new_x, new_y) not in self.water_zones:
+            if (new_x, new_y) not in [(obs.x, obs.y) for obs in self.obstacles] and (new_x, new_y) not in [(water.x, water.y) for water in self.water_zones]:
                 #Et si il n'y a pas d'autres unités:
                 if (new_x, new_y) not in player_coords and (new_x, new_y) not in enemy_coords:
                     #Le déplacement s'effectue.
@@ -654,12 +664,16 @@ class Game:
             new_effect = skill.effet.__class__()  # Une nouvelle instance de l'effet est créee
             new_effect.effectTTL = skill.effet.effectTTL  # On place sa durée de vie à celle de l'ancient effet
             #Cela permet de ne pas avoir plusieur effets superposés
-            self.current_effects.append(((x, y), new_effect))
-            #Deprec: l'effet est appliqué à l'unité; Gestion des effets par emplacement plutot que par unité affectée (plus facile ainsi)
-            #Ask to remove:
-            for unit in self.player_units + self.enemy_units:
-                if unit.x == x and unit.y == y:
-                    new_effect.apply_effect(unit)
+            if not any(isinstance(case, (Obstacle, Eau)) for case in self.obstacles + self.water_zones if case.x == x and case.y == y):
+                new_case = Normal(x, y)
+                new_case.effect = new_effect
+                self.current_effects.append(new_case)
+            
+                #Deprec: l'effet est appliqué à l'unité; Gestion des effets par emplacement plutot que par unité affectée (plus facile ainsi)
+                #Ask to remove:
+                for unit in self.player_units + self.enemy_units:
+                    if unit.x == x and unit.y == y:
+                        new_effect.apply_effect(unit)
         self.check_death()
         flip_display(self.screen, self.player_units, self.enemy_units, self.water_zones, self.obstacles, self.current_effects, self.current_objects)
         
@@ -667,19 +681,23 @@ class Game:
     def update_effects(self):
         """Mise a jour des durée de vie des effets, et application des effets sur les unités."""
         #Pour chaque effet dans la liste d'effets actuels:
-        for (x, y), effect in self.current_effects[:]:
-            for unit in self.player_units + self.enemy_units:
-                if unit.x == x and unit.y == y:
-                    #L'effet est appliqué si l'unité est à un de ses emplacements
-                    effect.apply_effect(unit)
-            #Réduction de la durée de vie de l'effet
-            effect.effectTTL -= 1
-
+        for case in self.current_effects:
+            x, y = case.x, case.y
+            if case.effect:
+                for unit in self.player_units + self.enemy_units:
+                    if unit.x == x and unit.y == y:
+                        #L'effet est appliqué si l'unité est à un de ses emplacements
+                        case.effect.apply_effect(unit)
+                #Réduction de la durée de vie de l'effet
+                case.effect.effectTTL -= 1
+                if case.effect.effectTTL <= 0:
+                    case.effect = None
+                    
         #Si la durée de vie de l'effet a expiré, l'effet est enlevé de la liste:
-        self.current_effects = [((x, y), effect) for (x, y), effect in self.current_effects if effect.effectTTL > 0]
+        self.current_effects = [case for case in self.current_effects if not case.effect or case.effect.effectTTL > 0]
         self.check_death()
         flip_display(self.screen, self.player_units, self.enemy_units, self.water_zones, self.obstacles, self.current_effects, self.current_objects)
-        
+     
     def handle_turns(self):
         """Gestion des tours selon le mode de jeu """
         #Si le mode PvP est sélectionné:
