@@ -17,7 +17,7 @@ class Game:
     Classe pour représenter le jeu.
 
     ...
-    Attributs
+    Attributs.
     ---------
     screen: pygame.Surface
         La surface de la fenêtre du jeu.
