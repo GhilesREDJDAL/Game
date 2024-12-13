@@ -71,20 +71,10 @@ class Game:
         self.up_coords = [(1, 1), (1, 2), (2, 1)]
         self.down_coords = [(GRID_SIZE-1, GRID_SIZE-1), (GRID_SIZE-1, GRID_SIZE-2), (GRID_SIZE-2, GRID_SIZE-1)]
         self.mode_de_jeu = None
-        """
-        self.obstacles = self.generate_random_positions(
-            10, WIDTH // CELL_SIZE, HEIGHT // CELL_SIZE, excluded_positions=self.up_coords + self.down_coords
-        )
-        self.water_zones = self.generate_random_positions(
-            10, WIDTH // CELL_SIZE, HEIGHT // CELL_SIZE, excluded_positions=self.obstacles + self.up_coords + self.down_coords
-        )"""
-        obstacle_positions = self.generate_random_positions( 10, WIDTH // CELL_SIZE, HEIGHT // CELL_SIZE, excluded_positions=self.up_coords + self.down_coords )
-        water_zone_positions = self.generate_random_positions( 10, WIDTH // CELL_SIZE, HEIGHT // CELL_SIZE, excluded_positions=obstacle_positions + self.up_coords + self.down_coords )
-        
-        self.obstacles = [Obstacle(x, y) for x, y in obstacle_positions]
-        self.water_zones = [Eau(x, y) for x, y in water_zone_positions]
         self.current_effects = []
-
+        self.obstacles = []
+        self.water_zones = []
+        
     def generate_random_positions(self, num_positions, grid_width, grid_height, excluded_positions=None):
         if excluded_positions is None:
             excluded_positions = []
@@ -141,6 +131,12 @@ class Game:
         self.current_effects = []
         self.rand_obj_coords = []
         self.current_objects = []
+        
+        obstacle_positions = self.generate_random_positions( 10, WIDTH // CELL_SIZE, HEIGHT // CELL_SIZE, excluded_positions=self.up_coords + self.down_coords )
+        water_zone_positions = self.generate_random_positions( 10, WIDTH // CELL_SIZE, HEIGHT // CELL_SIZE, excluded_positions=obstacle_positions + self.up_coords + self.down_coords )
+        
+        self.obstacles = [Obstacle(x, y) for x, y in obstacle_positions]
+        self.water_zones = [Eau(x, y) for x, y in water_zone_positions]
         while len(self.rand_obj_coords) < 5:
             x = np.random.randint(0, GRID_SIZE)
             y = np.random.randint(0, GRID_SIZE)
@@ -229,16 +225,20 @@ class Game:
                             dy = 1
                             move_key = True                  
                         #Si l'unité peut encore de déplacer:
-                        if mvmt_cpt >= 0 and move_key == True:
+                        if mvmt_cpt >= 0 and move_key:
                             #Elle se déplace et le compteur est décremnté de 1:
                             if selected_unit.move(dx, dy, self.obstacles, self.water_zones, self.player_units + self.enemy_units, self.screen):
-                                mvmt_cpt -= 1  # Reduce the movement counter
+                                mvmt_cpt -= 1
                                 self.check_pickup(selected_unit)
-                                if selected_unit in turn_units and selected_unit.health <= 0:
-                                    self.player_units.remove(selected_unit)
+                                if selected_unit.health <= 0:
+                                    if selected_unit in self.player_units: 
+                                        self.player_units.remove(selected_unit)
+                                    if selected_unit in turn_units: 
+                                        turn_units.remove(selected_unit)
                                     #Si c'est le cas, l'unité est enlevée d ela liste de l'équipe.
                                     has_acted = True
                                     selected_unit.is_selected = False #On remet l'indicateur de sélection à False
+                                    break
                         #Si elle ne peut plus se déplacer:
                         elif mvmt_cpt < 0:
                             #On affiche un message:
@@ -247,8 +247,7 @@ class Game:
                                 draw_text(self.screen, "Vous ne pouvez plus vous déplacer.", (10, HEIGHT + 10))
                                 pygame.display.flip()
                                 pygame.time.wait(500)
-                            #On verifie que l'unité soit encore en vie (cas où l'unité serait tombée à l'eau)
-                        
+                        # Mettre à jour l'affichage après chaque mouvement
                         flip_display(self.screen, self.player_units, self.enemy_units, self.water_zones, self.obstacles, self.current_effects, self.current_objects)
                         #L'utilisateur peut choisir d'utiliser l'attaque basique et de terminer son tour:
                         if event.key == pygame.K_SPACE:
