@@ -3,7 +3,7 @@ from unit import *
 
 class Case(ABC):
     """ 
-    Classe pour représenter une case
+    Classe pour représenter une case.
     """
     
     def __init__(self, x, y):
