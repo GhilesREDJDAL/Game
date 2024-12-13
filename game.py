@@ -231,8 +231,9 @@ class Game:
                                 mvmt_cpt -= 1
                                 self.check_pickup(selected_unit)
                                 if selected_unit.health <= 0:
-                                    if selected_unit in self.player_units: 
-                                        self.player_units.remove(selected_unit)
+                                    if selected_unit in self.player_units:
+                                        self.check_death()
+                                        #self.player_units.remove(selected_unit)
                                     if selected_unit in turn_units: 
                                         turn_units.remove(selected_unit)
                                     #Si c'est le cas, l'unité est enlevée d ela liste de l'équipe.
@@ -515,6 +516,8 @@ class Game:
         if self.mode_de_jeu == 'PvE':
             #Pour chaque ennemi en vie:
             for enemy in self.enemy_units:
+                #Il choisit une cible au hasard
+                target_player = random.choice(self.player_units)
                 if not self.player_units:
                     print("No player units available to target")
                     continue
@@ -539,7 +542,8 @@ class Game:
                         remaining_steps -= 1
                     else:
                         break
-                #Si l'unité à récupérer un objet, elle l'utilise:
+                
+                #Si l'unité à récupérer un objet, elle l'utilise:                    
                 if enemy.item:
                     enemy.item.use_object()
                     enemy.item = None
@@ -549,7 +553,6 @@ class Game:
                     #Qu'elle choisit au hasard
                     chosen_skill = random.choice(enemy.skills)
                     #Sur une cible au hasard
-                    target_player = random.choice(self.player_units)
                     flip_display(self.screen, self.player_units, self.enemy_units, self.water_zones, self.obstacles, self.current_effects, self.current_objects)
                     target_coords = (target_player.x, target_player.y)
                     #Selon le type de la compétence la gestion est différente:
@@ -568,6 +571,13 @@ class Game:
                         if enemy.use_skill(target_player, chosen_skill, self.screen):
                             if chosen_skill.effet is not None:
                                 self.apply_effect(target_player, chosen_skill)
+                if target_player is not None and isinstance(target_player, Unit):
+                    if abs(enemy.x - target_player.x) <= 1 and abs(enemy.y - target_player.y) <= 1:
+                        enemy.attack(target_player)
+                        if target_player.health <= 0:
+                            self.check_death()
+                    if enemy.health <= 0:
+                        self.check_death()
             pygame.time.wait(150)
             self.check_death()
     

@@ -101,7 +101,7 @@ class Unit(ABC):
     def attack(self, target):
         """Attaque une unité cible."""
         if abs(self.x - target.x) <= 1 and abs(self.y - target.y) <= 1:
-            pass#target.health = max(0, target.health - (target.defense_power - self.attack_power))
+            target.health = max(0, target.health - (target.defense_power - self.attack_power))
             
     @abstractmethod
     def draw(self, screen):
