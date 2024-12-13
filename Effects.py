@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 
 class Effect(ABC):
     """
-    Classe abstraite pour représenter un effet appliqué aux unités.
+    Classe abstraite pour représenter un effet appliqué aux unités
 
     ...
     Attributs
