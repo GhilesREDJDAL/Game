@@ -12,7 +12,7 @@ enemy_archer = pygame.image.load('images/enemy_archer.png')
 enemy_knight = pygame.image.load('images/enemy_knight.png')
 enemy_mage = pygame.image.load('images/enemy_mage.png')
 
-# On met les images à la bonne échelle.
+# On met les images à la bonne échelle
 player_archer = pygame.transform.scale(player_archer, (CELL_SIZE*0.9, CELL_SIZE*0.9))
 player_knight = pygame.transform.scale(player_knight, (CELL_SIZE*0.9, CELL_SIZE*0.9))
 player_mage = pygame.transform.scale(player_mage, (CELL_SIZE*0.9, CELL_SIZE*0.9))
