@@ -333,6 +333,7 @@ class Game:
                                                                     pygame.display.flip()
                                                                     pygame.time.wait(1000)  # Attendre 1 seconde pour afficher le message
                                                                     flip_display(self.screen, self.player_units, self.enemy_units, self.water_zones, self.obstacles, self.current_effects, self.current_objects)
+                                                            #Si c'est une compétence d'attaque en zone:
                                                             elif chosen_skill.type == "AoE":
                                                             	#Si la cible est une unité de joueur:
                                                                 for unit in self.player_units:
@@ -500,27 +501,104 @@ class Game:
         flip_display(self.screen, self.player_units, self.enemy_units, self.water_zones, self.obstacles, self.current_effects, self.current_objects)
 
     def handle_enemy_turn(self):
-        """IA très simple pour les ennemis."""
+        """ Gère le tour de l'IA enemie"""
+        #On verifie que l'on est bien dans le bon mode de jeu
         if self.mode_de_jeu == 'PvE':
+            #Pour chaque ennemi en vie:
             for enemy in self.enemy_units:
                 if not self.player_units:
                     print("No player units available to target")
                     continue
-                # Déplacement aléatoire
-                target = random.choice(self.player_units)
-                dx = 1 if enemy.x < target.x else -1 if enemy.x > target.x else 0
-                dy = 1 if enemy.y < target.y else -1 if enemy.y > target.y else 0
-                enemy.move(dx, dy, self.obstacles, self.water_zones, self.current_objects,self.screen)
-
-                # Attaque si possible
-                if abs(enemy.x - target.x) <= 1 and abs(enemy.y - target.y) <= 1:
-                    enemy.attack(target)
-                    """if target.health <= 0:
-                        self.team1_units.remove(target)
-                        self.player_units.remove(target)
-                if enemy.health <= 0:
-                    self.enemy_units.remove(enemy)"""
-        self.check_death()
+                #On recupère sa vitesse de déplacement:
+                remaining_steps = enemy.speed
+                #Et se déplace vers celle-ci:
+                while remaining_steps > 0:
+                    #On recupère l'objet le plus proche de l'unité
+                    target_item = self.find_nearest_item(enemy)
+                    #Si l'unité se trouve directement à coté de l'objet:
+                    if abs(enemy.x - target_item.x) + abs(enemy.y - target_item.y) == 1:
+                        #Elle le récupère et se déplace à l'emplacement de l'objet.
+                        enemy.x, enemy.y = target_item.x, target_item.y
+                        self.check_pickup(enemy)
+                        remaining_steps = 0
+                        break
+                    #On calcule la direction de déplacement:
+                    dx, dy = self.calculate_move_direction(enemy, target_item)
+                    if self.make_valid_move(enemy, dx, dy):
+                        #Si il y a des déplacement valides, l'unité se déplace
+                        enemy.move(dx, dy, self.obstacles, self.water_zones, self.current_objects, self.screen)
+                        pygame.time.wait(100)
+                        remaining_steps -= 1
+                    else:
+                        break
+                #Si l'unité à récupérer un objet, elle l'utilise:
+                if enemy.item:
+                    enemy.item.use_object()
+                    enemy.item = None
+    
+                #Sinon, elle utilise une compétence:
+                elif enemy.skills:
+                    #Qu'elle choisit au hasard
+                    chosen_skill = random.choice(enemy.skills)
+                    #Sur une cible au hasard
+                    target_player = random.choice(self.player_units)
+                    flip_display(self.screen, self.player_units, self.enemy_units, self.water_zones, self.obstacles, self.current_effects, self.current_objects)
+                    target_coords = (target_player.x, target_player.y)
+                    #Selon le type de la compétence la gestion est différente:
+                    if chosen_skill.type in ["Movement", "Zone"]:
+                        if chosen_skill.nom == "Teleportation" or chosen_skill.nom == "Zone de Soin":
+                    	    #On s'assure que le sorcier ne se téleporte pas sur les unités du joueur ni les soignes.
+                    	    target_coords = (enemy.x, enemy.y)
+                        enemy.use_skill(target_coords, chosen_skill, self.screen)
+                        if chosen_skill.effet is not None:
+                            self.apply_effect(target_coords, chosen_skill)
+                    elif chosen_skill.type == "AoE":
+                        if enemy.use_skill(target_player, chosen_skill, self.screen, extra_aoelist=self.player_units + self.enemy_units):
+                            if chosen_skill.effet is not None:
+                                self.apply_effect(target_player, chosen_skill)
+                    else:
+                        if enemy.use_skill(target_player, chosen_skill, self.screen):
+                            if chosen_skill.effet is not None:
+                                self.apply_effect(target_player, chosen_skill)
+            pygame.time.wait(150)
+            self.check_death()
+    
+    def find_nearest_item(self, enemy):
+        """ Calcule la distance au plus proche objet sur la carte, et retourne cet objet"""
+        min_distance = float('inf')
+        nearest_item = None
+        #On parcours la liste des objets présents sur la carte:
+        for obj in self.current_objects:
+            #On calcule la distance de chaque objet à l'unité:
+            distance = abs(enemy.x - obj.x) + abs(enemy.y - obj.y)
+            if distance < min_distance:
+                #On ne garde que le plus proche.
+                min_distance = distance
+                nearest_item = obj
+        return nearest_item
+    
+    def calculate_move_direction(self, enemy, target):
+        """Calcule la direction de deplacement de l'unité ennemie selon une cible (unité ou objet) """
+        dx = 1 if enemy.x < target.x else -1 if enemy.x > target.x else 0
+        dy = 1 if enemy.y < target.y else -1 if enemy.y > target.y else 0
+        return dx, dy
+    
+    def make_valid_move(self, enemy, dx, dy):
+        """ Determine les déplacements valides en prennant compte des obstacles, des zones d'eau, etc... """
+        possible_moves = [(dx, dy), (dx, 0), (0, dy)]
+        player_coords = [(unit.x, unit.y) for unit in self.player_units]
+        enemy_coords = [(unit.x, unit.y) for unit in self.enemy_units if unit != enemy]  # exclude the current enemy's position
+        #On parcours les déplacements possibles:
+        for move in possible_moves:
+            new_x, new_y = enemy.x + move[0], enemy.y + move[1]
+            #Si ces emplacements ne font pas partis des obstacles ou des zones d'eau:
+            if (new_x, new_y) not in self.obstacles and (new_x, new_y) not in self.water_zones:
+                #Et si il n'y a pas d'autres unités:
+                if (new_x, new_y) not in player_coords and (new_x, new_y) not in enemy_coords:
+                    #Le déplacement s'effectue.
+                    enemy.move(move[0], move[1], self.obstacles, self.water_zones, self.current_objects, self.screen)
+                    return True
+        return False
 
     def check_end_game(self):
         """Vérifie les conditions de fin de partie."""

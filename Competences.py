@@ -52,7 +52,6 @@ class Competence(ABC):
                 crit_dmg = (utilisateur.attack_power + self.puissance) * 2
                 dmg = max(0, crit_dmg - cible.defense_power)
                 self.display_message(screen, f"Coup critique! Dégâts infligés: {dmg}")
-                self.draw_skill_effect(screen, (cible.x, cible.y))
             else:
                 dmg = max(0, (utilisateur.attack_power + self.puissance) - cible.defense_power)
                 self.display_message(screen, f"Dégâts infligés: {dmg}")

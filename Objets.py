@@ -69,7 +69,7 @@ class AnneauVitesse(Objet):
     
     def use_object(self):
         if self.is_owned:
-            self.owner.speed *= 5
+            self.owner.speed += 2
 
     def draw(self, screen):
         screen.blit(speed_ring, (self.x*CELL_SIZE, self.y*CELL_SIZE))
