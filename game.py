@@ -69,7 +69,7 @@ class Game:
         self.team2_units = []
         self.player_units = []
         self.up_coords = [(1, 1), (1, 2), (2, 1)]
-        self.down_coords = [(GRID_SIZE-1, GRID_SIZE-1), (GRID_SIZE-1, GRID_SIZE-2), (GRID_SIZE-2, GRID_SIZE-1)]
+        self.down_coords = [(GRID_SIZE-2, GRID_SIZE-2), (GRID_SIZE-2, GRID_SIZE-3), (GRID_SIZE-3, GRID_SIZE-2)]
         self.mode_de_jeu = None
         self.current_effects = []
         self.obstacles = []
@@ -441,6 +441,10 @@ class Game:
                         #L'utilisateur peut choisir d'afficher plus d'informations à propos d'une unité (en cliquant dessus):
                         elif event.key == pygame.K_i:
                             self.disp_info()
+                for enemy in self.enemy_units:
+                    if (enemy.x, enemy.y) in [(wz.x, wz.y) for wz in self.water_zones]:
+                        enemy.health = 0
+                        
                 pygame.time.wait(50)
                 self.check_death()
                 flip_display(self.screen, self.player_units, self.enemy_units, self.water_zones, self.obstacles, self.current_effects, self.current_objects)
