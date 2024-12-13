@@ -3,7 +3,7 @@
 """
 Created on Sun Dec  8 01:57:08 2024
 
-@author: seb
+@author: seb.
 """
 from abc import ABC, abstractmethod
 from Constantes import CELL_SIZE
