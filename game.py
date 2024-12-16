@@ -522,7 +522,8 @@ class Game:
             #Pour chaque ennemi en vie:
             for enemy in self.enemy_units:
                 #Il choisit une cible au hasard
-                target_player = random.choice(self.player_units)
+                if self.player_units is not None:
+                    target_player = random.choice(self.player_units)
                 if not self.player_units:
                     print("No player units available to target")
                     break
